@@ -1013,7 +1013,7 @@
     const ws = h('select', { value: String(s.weekStart), onchange: () => { s.weekStart = Number(ws.value); calStart = null; save(); } }, [['1', 'Lunes'], ['0', 'Domingo'], ['6', 'Sábado']].map(([v, l]) => h('option', { value: v }, l))); ws.value = String(s.weekStart);
     root.append(sect('La semana empieza en', null, true, ws));
     const imp = h('input', { type: 'file', accept: '.csv,text/csv', onchange: () => { const f = imp.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { imp.value = ''; importDialog(String(rd.result)); }; rd.readAsText(f); } });
-    root.append(sect('Importar desde Clockify', 'En Clockify ve a Reports › Detailed, elige las fechas, y Export › CSV (con el idioma en inglés). Selecciona ese archivo aquí: se importan entradas, proyectos, clientes y etiquetas. Las entradas quedan a tu nombre.', false, imp));
+    root.append(sect('Importar desde Clockify', 'En Clockify ve a Reports › Detailed, elige las fechas, y Export › CSV (con el idioma en inglés). Selecciona ese archivo aquí: se importan entradas, proyectos, clientes y etiquetas. Cada entrada se asigna a la cuenta de su persona (por correo o nombre); un administrador puede importar las de todos y cada miembro solo las suyas.', false, imp));
     const pw = h('input', { type: 'password', placeholder: 'Nueva contraseña (mín. 8)', autocomplete: 'new-password' });
     root.append(sect('Mi contraseña', null, false, h('div', { class: 'addrow' }, pw, h('button', { class: 'btn sm', onclick: async () => {
       if (pw.value.length < 8) return toast('Mínimo 8 caracteres');
@@ -1086,33 +1086,56 @@
       sd: g(r, 'start date'), st: g(r, 'start time'), ed: g(r, 'end date'), et: g(r, 'end time')
     }));
     const det = detectFmt(recs.map(r => r.sd));
-    const users = [...new Set(recs.map(r => r.user).filter(Boolean))];
     const fmtSel = h('select', { value: det || 'dmy' }, [['dmy', 'DD/MM/AAAA'], ['mdy', 'MM/DD/AAAA'], ['ymd', 'AAAA-MM-DD']].map(([v, l]) => h('option', { value: v }, l)));
     fmtSel.value = det || 'dmy';
-    const tagUsers = h('input', { type: 'checkbox', checked: users.length > 1 });
+
+    /* personas del CSV -> cuentas del equipo (por correo; si no, por nombre) */
+    const adm = isAdmin(), SKIP = '__skip';
+    const norm = s => String(s || '').trim().toLowerCase();
+    const people = [];
+    recs.forEach(r => {
+      const k = r.user || '', p = people.find(x => x.key === k);
+      if (p) { p.n++; if (!p.email && r.email) p.email = r.email; } else people.push({ key: k, email: r.email, n: 1 });
+    });
+    const memberFor = p => state.members.find(m => m.active && p.email && norm(m.email) === norm(p.email)) || state.members.find(m => m.active && p.key && norm(m.name) === norm(p.key));
+    const opts = adm ? state.members.filter(m => m.active) : [me];
+    people.forEach(p => {
+      const m = p.key ? memberFor(p) : me, def = m && opts.some(o => o.id === m.id) ? m.id : SKIP;
+      p.sel = h('select', { value: def, onchange: updateSummary }, [h('option', { value: SKIP }, '— No importar —')].concat(opts.map(o => h('option', { value: o.id }, o.name + (o.id === me.id ? ' (yo)' : '')))));
+      p.sel.value = def;
+    });
+    const target = p => { const v = people.find(x => x.key === (p.user || '')).sel.value; return v === SKIP ? null : v; };
+
     const sum = h('div', { class: 'hint', style: 'color:var(--ink);line-height:1.6' });
+    const pl = (n, s, p) => n + ' ' + (n === 1 ? s : p);
     const build = () => {
       const fmt = fmtSel.value, out = [], bad = [];
       recs.forEach(r => { const a = parseDT(r.sd, r.st, fmt), b = parseDT(r.ed, r.et, fmt); (isFinite(a) && isFinite(b) && b > a ? out : bad).push(Object.assign({}, r, { a, b })); });
-      const key = (t, pn) => `${t.start}|${t.end}|${t.text}|${pn}`;
-      const have = new Set(myTasks().map(t => key(t, pName(t.projectId) === 'Sin proyecto' ? '' : pName(t.projectId))));
-      const fresh = out.filter(r => !have.has(key({ start: r.a, end: r.b, text: r.text || 'Tarea' }, r.project)));
-      return { out, bad, fresh };
+      const routed = out.filter(r => target(r));
+      const key = (u, s, e, tx, pn) => `${u}|${s}|${e}|${tx}|${pn}`;
+      const have = new Set(state.tasks.map(t => key(t.userId, t.start, t.end, t.text, pName(t.projectId) === 'Sin proyecto' ? '' : pName(t.projectId))));
+      const fresh = routed.filter(r => !have.has(key(target(r), r.a, r.b, r.text || 'Tarea', r.project)));
+      return { out, bad, routed, fresh };
     };
-    const refresh = () => {
-      const { out, bad, fresh } = build();
+    function updateSummary() {
+      const { out, bad, routed, fresh } = build();
       const ts = out.map(r => r.a);
       sum.textContent = '';
-      sum.append(h('div', {}, h('b', {}, out.length), ' entradas válidas' + (bad.length ? ` (${bad.length} omitidas: fechas ilegibles)` : '')));
+      sum.append(h('div', {}, h('b', {}, out.length), out.length === 1 ? ' entrada válida' : ' entradas válidas' + (bad.length ? ` (${bad.length} omitidas: fechas ilegibles)` : '')));
       if (out.length) sum.append(h('div', {}, 'Del ', h('b', {}, fmtDate(Math.min(...ts)) + ' ' + new Date(Math.min(...ts)).getFullYear()), ' al ', h('b', {}, fmtDate(Math.max(...ts)) + ' ' + new Date(Math.max(...ts)).getFullYear())));
-      sum.append(h('div', {}, [...new Set(out.map(r => r.project).filter(Boolean))].length + ' proyectos · ' + [...new Set(out.map(r => r.client).filter(Boolean))].length + ' clientes · ' + users.length + ' personas'));
-      if (out.length - fresh.length) sum.append(h('div', {}, (out.length - fresh.length) + ' ya estaban importadas: se omitirán.'));
+      sum.append(h('div', {}, pl([...new Set(routed.map(r => r.project).filter(Boolean))].length, 'proyecto', 'proyectos') + ' · ' + pl([...new Set(routed.map(r => r.client).filter(Boolean))].length, 'cliente', 'clientes')));
+      if (out.length - routed.length) sum.append(h('div', { style: 'color:#6b5a1e' }, pl(out.length - routed.length, 'entrada sin cuenta asignada: no se importará.', 'entradas sin cuenta asignada: no se importarán.')));
+      if (routed.length - fresh.length) sum.append(h('div', {}, pl(routed.length - fresh.length, 'ya estaba importada: se omitirá.', 'ya estaban importadas: se omitirán.')));
+      sum.append(h('div', { style: 'font-weight:600;margin-top:4px' }, 'Se importará' + (fresh.length === 1 ? ' 1 entrada nueva.' : 'n ' + fresh.length + ' entradas nuevas.')));
       if (!det) sum.append(h('div', { style: 'color:#6b5a1e' }, 'No se pudo detectar el formato de fecha: revisa el selector de arriba.'));
-    };
-    fmtSel.addEventListener('change', refresh); refresh();
+    }
+    fmtSel.addEventListener('change', updateSummary); updateSummary();
     const body = h('div', { class: 'form' },
       h('label', { class: 'fl' }, h('span', {}, 'Formato de fecha de tu archivo'), fmtSel),
-      users.length > 1 ? h('label', { class: 'fl inline' }, h('span', {}, 'Añadir a cada entrada una etiqueta con el nombre de la persona (las entradas quedan a tu nombre)'), tagUsers) : null,
+      h('div', { class: 'hint', style: 'margin:4px 0 0' }, adm
+        ? 'Elige a qué cuenta va cada persona del archivo. Quien aún no tenga cuenta no se importa: invítala en Equipo, que cree su cuenta y vuelve a importar (lo ya importado se omite).'
+        : 'Solo puedes importar tus propias entradas. Las de otras personas las importa un administrador.'),
+      people.map(p => h('label', { class: 'fl' }, h('span', {}, (p.key || 'Sin usuario en el archivo') + (p.email ? ' · ' + p.email : '') + ' — ' + pl(p.n, 'entrada', 'entradas')), p.sel)),
       sum);
     modal({ title: 'Importar desde Clockify', body, buttons: [
       { label: 'Cancelar', kind: 'ghost', onClick: c => c() },
@@ -1122,10 +1145,9 @@
         const pr = (n, clientName, bill) => { if (!n) return ''; let o = state.projects.find(x => x.name.toLowerCase() === n.toLowerCase()); if (!o) state.projects.push(o = { id: uid(), name: n, clientId: cl(clientName), color: PALETTE[state.projects.length % PALETTE.length], billable: bill, archived: false }); return o.id; };
         const tg = n => { let o = state.tags.find(x => x.name.toLowerCase() === n.toLowerCase()); if (!o) state.tags.push(o = { id: uid(), name: n, archived: false }); return o.id; };
         fresh.forEach(r => {
-          const tags = r.tags.map(tg); if (tagUsers.checked && r.user) tags.push(tg('👤 ' + r.user));
-          state.tasks.push({ id: uid(), userId: me.id, text: r.text || 'Tarea', status: false, start: r.a, end: r.b, projectId: pr(r.project, r.client, r.billable), tagIds: [...new Set(tags)], billable: r.billable });
+          state.tasks.push({ id: uid(), userId: target(r), text: r.text || 'Tarea', status: false, start: r.a, end: r.b, projectId: pr(r.project, r.client, r.billable), tagIds: [...new Set(r.tags.map(tg))], billable: r.billable });
         });
-        persist(); c(); location.hash = 'tracker'; render(); toast(fresh.length + ' entradas importadas');
+        persist(); c(); location.hash = fresh.some(r => target(r) === me.id) ? 'tracker' : 'reports'; render(); toast(pl(fresh.length, 'entrada importada', 'entradas importadas'));
       } }] });
   }
 
