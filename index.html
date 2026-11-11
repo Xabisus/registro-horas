@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registro de horas</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root{
+    --blue:#03a9f4; --blue-d:#0288d1; --ink:#2b3a4a; --muted:#6b7a8a; --line:#e3e8ee;
+    --bg:#f4f7fa; --card:#fff; --red:#e53935; --green:#2e9e5b;
+    --series-1:#2a78d6; --none:#9aa7b4;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:#fff}
+  button,input,select,textarea{font:inherit;color:inherit}
+  button{cursor:pointer}
+  a{color:var(--blue-d)}
+  .hidden{display:none!important}
+
+  /* ---------- nav ---------- */
+  .nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:6px;padding:12px 5vw;background:#fff;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:20px;color:var(--ink);cursor:pointer;margin-right:auto}
+  .brand svg{width:28px;height:28px}
+  .nav a.link{padding:8px 12px;color:var(--ink);text-decoration:none;font-size:15px;border-radius:6px;cursor:pointer}
+  .nav a.link:hover{background:var(--bg)}
+  .btn{border:0;border-radius:6px;padding:10px 18px;font-weight:600;letter-spacing:.3px;background:var(--blue);color:#fff}
+  .btn:hover{background:var(--blue-d)}
+  .btn.ghost{background:transparent;color:var(--blue-d);border:1px solid var(--blue)}
+  .btn.ghost:hover{background:#e8f6fe}
+  .btn.danger{background:var(--red)}
+  .btn.sm{padding:7px 12px;font-size:14px}
+  @media(max-width:700px){.nav a.link{display:none}}
+
+  /* ---------- barra superior y acceso ---------- */
+  .navuser{font-size:14px;color:var(--muted)}
+  .sync{font-size:12px;color:var(--muted);min-width:80px;text-align:right}
+  .sync.err{color:var(--red);font-weight:600}
+  @media(max-width:640px){.navuser{display:none}}
+  .auth{min-height:calc(100vh - 57px);display:grid;place-items:center;padding:24px 5vw;background:linear-gradient(180deg,#eaf7fe,#fff)}
+  .auth .box{width:min(400px,100%);background:#fff;border:1px solid var(--line);border-radius:12px;padding:26px;box-shadow:0 8px 30px rgba(0,0,0,.06)}
+  .auth h1{margin:0 0 4px;font-size:24px}
+  .auth p{color:var(--muted);margin:0 0 16px;font-size:14px}
+  .auth input{width:100%;border:1px solid var(--line);border-radius:6px;padding:10px;background:#fff}
+  .auth input:focus{outline:2px solid #b7e3fa;border-color:var(--blue)}
+  .auth .btn{width:100%;margin-top:4px}
+  .auth .alt{margin-top:14px;text-align:center;font-size:14px;color:var(--muted)}
+  .auth .alt a{cursor:pointer}
+  .auth .msg{font-size:13px;min-height:16px}
+  .auth .msg.err{color:var(--red)} .auth .msg.ok{color:var(--green)}
+  input[type=password],input[type=email]{border:1px solid var(--line);border-radius:6px;padding:9px 10px;background:#fff;min-width:0}
+  .nonadmin .adm{display:none}
+  .sect.lock{opacity:.85}
+
+  /* ---------- app shell ---------- */
+  .app{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 57px);background:var(--bg)}
+  .side{background:#fff;border-right:1px solid var(--line);padding:16px 12px;position:sticky;top:57px;align-self:start;height:calc(100vh - 57px);overflow:auto}
+  .ws{display:flex;align-items:center;gap:10px;padding:4px 8px 16px;font-weight:700}
+  .ws img{width:32px;height:32px;border-radius:8px;object-fit:cover}
+  .ws .dot{width:32px;height:32px;border-radius:8px;background:var(--blue);color:#fff;display:grid;place-items:center}
+  .ws span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .side a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:15px;color:var(--ink);text-decoration:none;cursor:pointer}
+  .side a:hover{background:var(--bg)}
+  .side a.on{background:#e8f6fe;color:var(--blue-d);font-weight:600}
+  .side a i{font-style:normal;width:20px;text-align:center}
+  .main{padding:26px 3vw 60px;width:100%;max-width:1100px}
+  @media(max-width:820px){
+    .app{grid-template-columns:1fr}
+    .side{position:static;height:auto;display:flex;gap:4px;overflow-x:auto;padding:8px;border-right:0;border-bottom:1px solid var(--line)}
+    .side .ws{display:none}.side a{white-space:nowrap;padding:8px 12px}
+  }
+  h1.title{font-size:26px;margin:0 0 6px}
+  .status{font-size:13px;color:var(--muted);margin:0 0 16px}
+  .status b{color:var(--ink)}
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0}
+  .toolbar .sp{flex:1}
+  input[type=text],input[type=number],input[type=date],input[type=datetime-local],select,textarea{border:1px solid var(--line);border-radius:6px;padding:9px 10px;background:#fff;min-width:0}
+  input:focus,select:focus,textarea:focus{outline:2px solid #b7e3fa;border-color:var(--blue)}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:10px}
+  .tbl{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:15px}
+  .tbl th{background:#e9eff5;color:var(--muted);text-align:left;font-weight:600;font-size:13px;padding:10px 14px}
+  .tbl td{padding:11px 14px;border-top:1px solid var(--line);vertical-align:middle}
+  .tbl td.r,.tbl th.r{text-align:right;font-variant-numeric:tabular-nums}
+  .tbl tr.arch td{color:#98a4b0}
+  .tag-chip{display:inline-block;background:#eef2f6;border-radius:999px;padding:2px 9px;font-size:12px;color:var(--muted);margin-right:4px}
+  .pdot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:baseline}
+  .ib{border:0;background:transparent;border-radius:6px;padding:6px 8px;font-size:17px;color:var(--muted)}
+  .ib:hover{background:var(--bg);color:var(--ink)}
+  .ib.del:hover{color:var(--red)}
+  .empty{text-align:center;padding:50px 20px;color:var(--muted)}
+  .empty .big{font-size:42px}
+  .empty h3{margin:8px 0 4px;color:var(--ink)}
+  .hint{font-size:13px;color:var(--muted);margin:10px 0}
+  .note{background:#fff8e6;border:1px solid #f3e0a8;border-radius:8px;padding:10px 14px;font-size:14px;color:#6b5a1e;margin:10px 0}
+
+  /* ---------- tracker ---------- */
+  .bar{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 12px;flex-wrap:wrap}
+  .bar input.nm{flex:1;min-width:170px;border:0;font-size:16px;padding:10px 4px;background:transparent}
+  .bar input.nm:focus{outline:0}
+  .bar select{max-width:170px}
+  .tgl{border:1px solid var(--line);background:#fff;border-radius:6px;padding:8px 11px;color:var(--muted);font-weight:600}
+  .tgl.on{background:#e8f6fe;color:var(--blue-d);border-color:var(--blue)}
+  .clock{font-variant-numeric:tabular-nums;font-size:22px;font-weight:600;min-width:100px;text-align:right}
+  .go{min-width:90px;padding:12px 20px;font-size:15px}
+  .go.stop{background:var(--red)}
+  .day{margin-top:22px}
+  .day-h{display:flex;justify-content:space-between;align-items:center;background:#e9eff5;border:1px solid var(--line);border-bottom:0;border-radius:10px 10px 0 0;padding:10px 14px;font-size:14px;color:var(--muted)}
+  .day-h b{color:var(--ink)}
+  .rows{border:1px solid var(--line);border-radius:0 0 10px 10px;background:#fff;overflow:hidden}
+  .row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-top:1px solid var(--line)}
+  .row:first-child{border-top:0}
+  .row .t{flex:1;min-width:0;font-weight:600;cursor:text;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .t.done{color:var(--green)} .row .t.todo{color:var(--red)}
+  .row input.edit{flex:1;padding:6px 8px;border:1px solid var(--blue);border-radius:6px}
+  .row .pj{font-size:14px;color:var(--ink);white-space:nowrap;max-width:170px;overflow:hidden;text-overflow:ellipsis}
+  .row .range{color:var(--muted);font-size:14px;white-space:nowrap}
+  .row .dur{font-variant-numeric:tabular-nums;font-weight:600;min-width:70px;text-align:right}
+  .row .bill{color:var(--green);font-weight:700;width:14px}
+  @media(max-width:640px){.row{flex-wrap:wrap}.row .range{order:9;width:100%}}
+
+  /* ---------- calendar ---------- */
+  .cal{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .cal-head,.cal-body{display:grid;grid-template-columns:48px repeat(7,1fr)}
+  .cal-head div{padding:8px 4px;text-align:center;font-size:13px;color:var(--muted);border-left:1px solid var(--line);background:#e9eff5}
+  .cal-head div b{display:block;color:var(--ink);font-size:15px}
+  .cal-head div.today b{color:var(--blue-d)}
+  .cal-scroll{max-height:560px;overflow:auto}
+  .cal-body .gut{position:relative}
+  .cal-body .gut span{position:absolute;right:6px;font-size:11px;color:var(--muted);transform:translateY(-50%)}
+  .cal-col{position:relative;border-left:1px solid var(--line);background-image:linear-gradient(var(--line) 1px,transparent 1px);background-size:100% 36px}
+  .cal-col.off{background-color:#f7f9fb}
+  .cal-col.today{background-color:#f2fafe}
+  .blk{position:absolute;border-radius:5px;padding:2px 5px;font-size:11.5px;line-height:1.25;overflow:hidden;cursor:pointer;color:#0b2230;border-left:3px solid var(--c);background:color-mix(in srgb,var(--c) 22%,#fff)}
+  .blk b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nowline{position:absolute;left:0;right:0;height:2px;background:var(--red);z-index:2}
+
+  /* ---------- dashboard / reports ---------- */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:12px 0 18px}
+  .tile{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .tile small{color:var(--muted);font-size:13px}
+  .tile div{font-size:26px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
+  .twocol{display:grid;grid-template-columns:3fr 2fr;gap:14px}
+  @media(max-width:900px){.twocol{grid-template-columns:1fr}}
+  .panel.pad{padding:16px}
+  .panel h3{margin:0 0 10px;font-size:16px;display:flex;align-items:center;justify-content:space-between}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+  .seg button{border:0;background:transparent;padding:8px 14px;font-size:14px;color:var(--muted)}
+  .seg button.on{background:#e8f6fe;color:var(--blue-d);font-weight:600}
+  svg.chart{width:100%;height:auto;display:block}
+  svg.chart text{font-size:11px;fill:var(--muted);font-family:inherit}
+  .hb{display:grid;grid-template-columns:minmax(80px,140px) 1fr;gap:6px 12px;align-items:center;font-size:14px}
+  .hb .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hb .trk{display:flex;align-items:center;gap:8px;height:20px}
+  .hb .fill{height:14px;border-radius:0 4px 4px 0;min-width:2px}
+  .hb .val{font-size:13px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+  #tip{position:fixed;z-index:80;background:#2b3a4a;color:#fff;border-radius:6px;padding:6px 10px;font-size:12.5px;pointer-events:none;opacity:0;transition:opacity .08s;max-width:240px}
+
+  /* ---------- forms / modal ---------- */
+  .addrow{display:flex;gap:8px;flex-wrap:wrap}
+  .ov{position:fixed;inset:0;background:rgba(20,30,40,.45);z-index:60;display:grid;place-items:center;padding:16px}
+  .dlg{background:#fff;border-radius:12px;width:min(480px,100%);max-height:92vh;overflow:auto;padding:20px 22px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+  .dlg h3{margin:0 0 14px}
+  .dlg .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+  .form{display:grid;gap:12px}
+  .fl{display:grid;gap:5px;font-size:14px}
+  .fl>span{color:var(--muted);font-size:13px}
+  .fl.inline{display:flex;align-items:center;gap:8px}
+  .fl.inline>span{color:var(--ink);font-size:14px;order:2}
+  .fl input[type=text],.fl input[type=number],.fl select,.fl textarea,.fl input[type=datetime-local]{width:100%}
+  .mc{display:flex;flex-wrap:wrap;gap:8px}
+  .mc label{display:flex;align-items:center;gap:5px;font-size:14px;border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+  .sw{display:flex;gap:8px;flex-wrap:wrap}
+  .sw button{width:26px;height:26px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+  .sw button.on{box-shadow:0 0 0 2px var(--ink)}
+  .err{color:var(--red);font-size:13px;min-height:16px;margin-top:8px}
+  .sect{padding:18px 0;border-top:1px solid var(--line)}
+  .sect:first-of-type{border-top:0}
+  .sect h3{margin:0 0 4px;font-size:16px}
+  .sect p{margin:0 0 10px;color:var(--muted);font-size:14px;max-width:680px}
+  .days{display:flex;gap:6px;flex-wrap:wrap}
+  .days label{display:flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:14px;background:#fff}
+  .logo-prev{width:64px;height:64px;border-radius:12px;object-fit:cover;border:1px solid var(--line);background:var(--bg)}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#2b3a4a;color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:90}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="brand" id="brand">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#03a9f4"/><circle cx="16" cy="16" r="9.5" fill="#fff"/><path d="M16 9.5V16l4.5 3" stroke="#03a9f4" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Registro de horas
+  </div>
+  <span class="navuser hidden" id="navuser"></span>
+  <span class="sync hidden" id="syncstatus"></span>
+  <button class="btn ghost sm hidden" id="logout">Cerrar sesión</button>
+</header>
+
+<main id="view-auth" class="auth"></main>
+
+<div id="view-app" class="app hidden">
+  <aside class="side" id="side"></aside>
+  <div class="main" id="content"></div>
+</div>
+
+<div id="tip"></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+(() => {
+  /* =====================  helpers  ===================== */
+  const $ = (s, r = document) => r.querySelector(s);
+  const pad = n => String(n).padStart(2, '0');
+  const uid = () => crypto.randomUUID();
+  const DAY = 864e5, HOUR = 36e5;
+
+  function h(tag, props, ...kids) {
+    const e = document.createElement(tag);
+    let val;
+    for (const [k, v] of Object.entries(props || {})) {
+      if (k === 'class') e.className = v;
+      else if (k === 'style') e.style.cssText = v;
+      else if (k === 'value') val = v;
+      else if (k === 'checked') e.checked = !!v;
+      else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+      else if (v === false || v == null) {}
+      else e.setAttribute(k, v === true ? '' : v);
+    }
+    kids.flat(Infinity).forEach(c => { if (c == null || c === false) return; e.append(c.nodeType ? c : document.createTextNode(String(c))); });
+    if (val !== undefined) e.value = val;
+    return e;
+  }
+
+  let toastT;
+  const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200); };
+  const tipEl = $('#tip');
+  const showTip = (e, lines) => {
+    tipEl.textContent = '';
+    [].concat(lines).forEach((l, i) => tipEl.append(i ? h('br') : '', i === 0 ? h('b', {}, l) : l));
+    tipEl.style.opacity = 1;
+    const x = e.clientX ?? (e.target.getBoundingClientRect().left + 10), y = e.clientY ?? (e.target.getBoundingClientRect().top);
+    tipEl.style.left = Math.min(x + 12, innerWidth - 250) + 'px';
+    tipEl.style.top = Math.max(8, y - 44) + 'px';
+  };
+  const hideTip = () => { tipEl.style.opacity = 0; };
+  const hover = (el, lines) => {
+    el.addEventListener('mousemove', e => showTip(e, lines));
+    el.addEventListener('mouseleave', hideTip);
+    el.addEventListener('focus', e => showTip(e, lines));
+    el.addEventListener('blur', hideTip);
+  };
+
+  /* dates */
+  const startOfDay = ts => new Date(ts).setHours(0, 0, 0, 0);
+  const addDays = (ts, n) => { const d = new Date(ts); d.setDate(d.getDate() + n); return d.getTime(); };
+  const dayKey = ts => { const d = new Date(ts); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+  const startOfWeek = ts => { const s = startOfDay(ts); const diff = (new Date(s).getDay() - S().weekStart + 7) % 7; return addDays(s, -diff); };
+  const fmtTime = ts => { const d = new Date(ts); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+  const fmtDate = ts => new Date(ts).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  const dayLabel = ts => {
+    const k = dayKey(ts), now = Date.now();
+    if (k === dayKey(now)) return 'Hoy';
+    if (k === dayKey(addDays(now, -1))) return 'Ayer';
+    return new Date(ts).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+  };
+  const toLocalInput = ts => { const d = new Date(ts); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
+  const dateInput = ts => dayKey(ts);
+  const parseDateInput = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d).getTime(); };
+
+  /* durations (respect workspace format) */
+  const clockFmt = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s % 3600 / 60))}:${pad(s % 60)}`; };
+  function fmtD(ms) {
+    const f = S().durFmt;
+    if (f === 'compact') { const m = Math.round(ms / 60000); return `${Math.floor(m / 60)}:${pad(m % 60)}`; }
+    if (f === 'decimal') return (ms / HOUR).toFixed(2).replace('.', ',');
+    return clockFmt(Math.round(ms / 1000) * 1000);
+  }
+
+  /* =====================  state  ===================== */
+  const PALETTE = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#e34948'];
+  const defaults = () => ({
+    tasks: [], running: null,
+    projects: [], clients: [], tags: [],
+    members: [], invites: [],
+    settings: { workspace: 'Equipo', logo: null, durFmt: 'full', workDays: [1, 2, 3, 4, 5], weekStart: 1, defBillable: false, requireProject: false }
+  });
+  let state = defaults();
+  const S = () => state.settings;
+  const pById = id => state.projects.find(p => p.id === id);
+  const cById = id => state.clients.find(c => c.id === id);
+  const tById = id => state.tags.find(t => t.id === id);
+  const pColor = id => (pById(id) || {}).color || 'var(--none)';
+  const pName = id => (pById(id) || {}).name || 'Sin proyecto';
+
+  let ticker = null, route = 'tracker';
+  let draft = { projectId: '', tagIds: [], billable: false };
+  let sb = null, me = null;
+  const CFG = window.APP_CONFIG || {};
+  const isAdmin = () => !!me && me.role === 'admin';
+  const myTasks = () => state.tasks.filter(t => t.userId === me.id);
+  const uName = id => { const m = state.members.find(x => x.id === id); return m ? m.name : 'Persona eliminada'; };
+
+  /* ---------- datos compartidos (Supabase) ----------
+     El estado vive en memoria (state). persist() compara con lo último guardado
+     y sube solo las filas que han cambiado, así dos personas no se pisan. */
+  const COLS = [
+    { key: 'clients', table: 'clients',
+      to: c => ({ id: c.id, name: c.name, address: c.address || '', archived: !!c.archived }),
+      from: r => ({ id: r.id, name: r.name, address: r.address || '', archived: !!r.archived }) },
+    { key: 'projects', table: 'projects',
+      to: p => ({ id: p.id, name: p.name, client_id: p.clientId || null, color: p.color, billable: !!p.billable, archived: !!p.archived }),
+      from: r => ({ id: r.id, name: r.name, clientId: r.client_id || '', color: r.color, billable: !!r.billable, archived: !!r.archived }) },
+    { key: 'tags', table: 'tags',
+      to: t => ({ id: t.id, name: t.name, archived: !!t.archived }),
+      from: r => ({ id: r.id, name: r.name, archived: !!r.archived }) },
+    { key: 'tasks', table: 'time_entries', own: true,
+      to: t => ({ id: t.id, user_id: t.userId, text: t.text, done: !!t.status, start_at: new Date(t.start).toISOString(), end_at: new Date(t.end).toISOString(), project_id: t.projectId || null, tag_ids: t.tagIds || [], billable: !!t.billable }),
+      from: r => ({ id: r.id, userId: r.user_id, text: r.text, status: !!r.done, start: Date.parse(r.start_at), end: Date.parse(r.end_at), projectId: r.project_id || '', tagIds: r.tag_ids || [], billable: !!r.billable }) }
+  ];
+  let synced = {}, syncedSettings = '', syncedRunning = 'null';
+  const rowsOf = c => new Map(state[c.key].filter(x => !c.own || isAdmin() || x.userId === me.id).map(x => [x.id, JSON.stringify(c.to(x))]));
+  function snapshot() {
+    synced = {}; COLS.forEach(c => { synced[c.key] = rowsOf(c); });
+    syncedSettings = JSON.stringify(state.settings); syncedRunning = JSON.stringify(state.running);
+  }
+  const chunks = (a, n) => { const o = []; for (let i = 0; i < a.length; i += n) o.push(a.slice(i, i + n)); return o; };
+  const must = r => { if (r && r.error) throw r.error; return r; };
+
+  let flushTimer = null, chain = Promise.resolve(), dirty = false, saving = false, syncErr = false;
+  function setSync(kind) {
+    const el = $('#syncstatus'); if (!el) return;
+    el.className = 'sync' + (kind === 'error' ? ' err' : '');
+    el.textContent = kind === 'saving' ? 'Guardando…' : kind === 'error' ? '⚠ Sin guardar' : '✓ Guardado';
+  }
+  function persist() {
+    dirty = true; setSync('saving');
+    clearTimeout(flushTimer);
+    flushTimer = setTimeout(() => { chain = chain.then(flush); }, 300);
+  }
+  async function flush() {
+    if (!dirty) return;
+    dirty = false; saving = true;
+    try {
+      for (const c of COLS) {                       // primero lo nuevo/cambiado (clientes → proyectos → etiquetas → horas)
+        const cur = rowsOf(c), old = synced[c.key];
+        const up = [...cur].filter(([id, j]) => old.get(id) !== j);
+        for (const ch of chunks(up, 300)) { must(await sb.from(c.table).upsert(ch.map(([, j]) => JSON.parse(j)))); ch.forEach(([id, j]) => old.set(id, j)); }
+      }
+      for (const c of [...COLS].reverse()) {        // después lo borrado
+        const have = new Set(state[c.key].map(x => x.id)), old = synced[c.key];
+        const gone = [...old.keys()].filter(id => !have.has(id));
+        for (const ch of chunks(gone, 100)) { must(await sb.from(c.table).delete().in('id', ch)); ch.forEach(id => old.delete(id)); }
+      }
+      const sj = JSON.stringify(state.settings);
+      if (isAdmin() && sj !== syncedSettings) { must(await sb.from('workspace_settings').upsert({ id: 1, data: state.settings })); syncedSettings = sj; }
+      const rj = JSON.stringify(state.running);
+      if (rj !== syncedRunning) {
+        must(state.running ? await sb.from('running_timers').upsert({ user_id: me.id, data: state.running }) : await sb.from('running_timers').delete().eq('user_id', me.id));
+        syncedRunning = rj;
+      }
+      saving = false; syncErr = false;
+      if (!dirty) setSync('ok');
+    } catch (e) {
+      saving = false; dirty = true; setSync('error');
+      if (!syncErr) toast('No se pudo guardar (' + ((e && e.message) || 'error') + '). Lo reintento en unos segundos.');
+      syncErr = true;
+      clearTimeout(flushTimer); flushTimer = setTimeout(() => { chain = chain.then(flush); }, 10000);
+    }
+  }
+  const flushNow = () => { clearTimeout(flushTimer); chain = chain.then(flush); return chain; };
+
+  async function fetchAll(table, order = 'id') {
+    const out = []; let from = 0;
+    for (;;) {                                      // Supabase devuelve máx. 1000 filas por petición
+      const { data, error } = await sb.from(table).select('*').order(order).range(from, from + 999);
+      if (error) throw error;
+      out.push(...data);
+      if (data.length < 1000) return out;
+      from += 1000;
+    }
+  }
+  async function loadAll() {
+    const [profiles, clients, projects, tags, tasks] = await Promise.all(['profiles', 'clients', 'projects', 'tags', 'time_entries'].map(t => fetchAll(t)));
+    const [st, run, inv] = await Promise.all([
+      sb.from('workspace_settings').select('*').eq('id', 1).maybeSingle(),
+      sb.from('running_timers').select('*').eq('user_id', me.id).maybeSingle(),
+      isAdmin() ? fetchAll('allowed_emails', 'email') : Promise.resolve([])
+    ]);
+    must(st); must(run);
+    const d = defaults();
+    state = Object.assign(d, {
+      members: profiles.map(p => ({ id: p.id, name: p.name || p.email, email: p.email, role: p.role, active: !!p.active })),
+      invites: inv.map(i => ({ email: i.email, role: i.role })),
+      clients: clients.map(COLS[0].from), projects: projects.map(COLS[1].from), tags: tags.map(COLS[2].from), tasks: tasks.map(COLS[3].from),
+      running: run.data ? run.data.data : null,
+      settings: Object.assign(d.settings, st.data ? st.data.data : {})
+    });
+    me = state.members.find(m => m.id === me.id) || me;
+    snapshot();
+  }
+  function syncDraft() { draft = state.running ? { projectId: state.running.projectId || '', tagIds: state.running.tagIds || [], billable: !!state.running.billable } : { projectId: '', tagIds: [], billable: S().defBillable }; }
+
+  /* refresco: cada minuto y al volver a la pestaña, para ver las horas de los demás */
+  async function refresh() {
+    if (!me || document.hidden || dirty || saving || document.querySelector('.ov')) return;
+    const a = document.activeElement;
+    if (a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName) && $('#content').contains(a)) return;
+    try {
+      await loadAll();
+      if (!me.active) return location.reload();
+      if (state.running) syncDraft();
+      render();
+    } catch (e) { /* sin conexión: se reintenta en el siguiente ciclo */ }
+  }
+  setInterval(refresh, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+  window.addEventListener('beforeunload', e => { if (dirty || saving) { e.preventDefault(); e.returnValue = ''; } });
+
+  /* ---------- acceso (login) ---------- */
+  function setAuthed(on) {
+    $('#view-auth').classList.toggle('hidden', on);
+    $('#view-app').classList.toggle('hidden', !on);
+    ['navuser', 'syncstatus', 'logout'].forEach(id => $('#' + id).classList.toggle('hidden', !on));
+  }
+  function authFail(e) {
+    const m = (e && e.message) || String(e);
+    if (/invalid login/i.test(m)) return 'Correo o contraseña incorrectos.';
+    if (/not confirmed/i.test(m)) return 'Confirma tu correo: te hemos enviado un enlace.';
+    if (/database error|autorizado/i.test(m)) return 'Este correo no está autorizado. Pide al administrador que te invite.';
+    if (/already registered/i.test(m)) return 'Ese correo ya tiene cuenta. Entra con tu contraseña.';
+    if (/rate limit/i.test(m)) return 'Demasiados intentos. Espera unos minutos.';
+    return m;
+  }
+  function showAuth(mode = 'login', note = '') {
+    setAuthed(false);
+    const root = $('#view-auth'); root.textContent = '';
+    if (!CFG.SUPABASE_URL || !CFG.SUPABASE_ANON_KEY || !window.supabase) {
+      root.append(h('div', { class: 'box' }, h('h1', {}, 'Falta configurar'), h('p', {}, 'Rellena SUPABASE_URL y SUPABASE_ANON_KEY en config.js (mira el README).')));
+      return;
+    }
+    const msg = h('div', { class: 'msg' });
+    const say = (t, ok) => { msg.textContent = t || ''; msg.className = 'msg ' + (ok ? 'ok' : 'err'); };
+    if (note) say(note);
+    const name = h('input', { type: 'text', placeholder: 'Tu nombre', autocomplete: 'name', maxlength: 60 });
+    const email = h('input', { type: 'email', placeholder: 'Correo', autocomplete: 'email' });
+    const pass = h('input', { type: 'password', placeholder: mode === 'recovery' ? 'Nueva contraseña' : 'Contraseña', autocomplete: mode === 'login' ? 'current-password' : 'new-password' });
+    const T = { login: ['Entrar', 'Accede con tu cuenta del equipo.'], signup: ['Crear cuenta', 'Usa el correo con el que te invitó el administrador.'], reset: ['Recuperar contraseña', 'Te enviaremos un enlace por correo.'], recovery: ['Nueva contraseña', 'Elige una contraseña nueva (mínimo 8 caracteres).'] }[mode];
+    const btn = h('button', { class: 'btn', type: 'submit' }, mode === 'login' ? 'Entrar' : mode === 'signup' ? 'Crear cuenta' : mode === 'reset' ? 'Enviar enlace' : 'Guardar contraseña');
+    const fields = { login: [email, pass], signup: [name, email, pass], reset: [email], recovery: [pass] }[mode];
+    const frm = h('form', { class: 'form', onsubmit: async ev => {
+      ev.preventDefault(); btn.disabled = true; say('');
+      try {
+        const em = email.value.trim().toLowerCase();
+        if (mode === 'login') {
+          const { data, error } = await sb.auth.signInWithPassword({ email: em, password: pass.value }); if (error) throw error;
+          await enter(data.user);
+        } else if (mode === 'signup') {
+          if (!name.value.trim()) throw new Error('Escribe tu nombre.');
+          if (pass.value.length < 8) throw new Error('La contraseña debe tener al menos 8 caracteres.');
+          const { data, error } = await sb.auth.signUp({ email: em, password: pass.value, options: { data: { name: name.value.trim() } } }); if (error) throw error;
+          if (data.session) await enter(data.user); else say('Cuenta creada. Revisa tu correo para confirmarla y después entra.', true);
+        } else if (mode === 'reset') {
+          const { error } = await sb.auth.resetPasswordForEmail(em, { redirectTo: location.origin + location.pathname }); if (error) throw error;
+          say('Si el correo tiene cuenta, recibirás un enlace.', true);
+        } else {
+          if (pass.value.length < 8) throw new Error('La contraseña debe tener al menos 8 caracteres.');
+          const { error } = await sb.auth.updateUser({ password: pass.value }); if (error) throw error;
+          const { data } = await sb.auth.getSession(); await enter(data.session.user);
+        }
+      } catch (e) { say(authFail(e)); }
+      btn.disabled = false;
+    } }, ...fields, btn, msg);
+    const link = (label, m) => h('a', { href: '#', onclick: e => { e.preventDefault(); showAuth(m); } }, label);
+    const alt = mode === 'login' ? [link('Crear cuenta', 'signup'), ' · ', link('He olvidado la contraseña', 'reset')] : mode === 'recovery' ? [] : [link('Volver a entrar', 'login')];
+    root.append(h('div', { class: 'box' }, h('h1', {}, T[0]), h('p', {}, T[1]), frm, h('div', { class: 'alt' }, alt)));
+    (fields[0]).focus();
+  }
+  function showBlocked(prof) {
+    setAuthed(false);
+    const root = $('#view-auth'); root.textContent = '';
+    root.append(h('div', { class: 'box' }, h('h1', {}, prof ? 'Cuenta desactivada' : 'Cuenta sin acceso'),
+      h('p', {}, prof ? 'Un administrador ha desactivado tu acceso.' : 'Tu cuenta no tiene perfil en el equipo. Pide al administrador que te invite.'),
+      h('button', { class: 'btn', onclick: logout }, 'Cerrar sesión')));
+  }
+  async function logout() {
+    try { await flushNow(); } catch (e) {}
+    try { await sb.auth.signOut(); } catch (e) {}
+    location.hash = ''; location.reload();
+  }
+  async function enter(user) {
+    const { data: prof, error } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    if (error) return showAuth('login', 'No se pudo cargar tu perfil: ' + error.message);
+    if (!prof || !prof.active) return showBlocked(prof);
+    me = { id: prof.id, name: prof.name || prof.email, email: prof.email, role: prof.role, active: true };
+    setAuthed(true); setSync('ok');
+    $('#content').textContent = 'Cargando…';
+    try { await loadAll(); } catch (e) { $('#content').textContent = 'No se pudieron cargar los datos: ' + ((e && e.message) || e) + '. Recarga la página.'; return; }
+    $('#navuser').textContent = me.name + (isAdmin() ? ' · admin' : '');
+    syncDraft();
+    go();
+  }
+  async function boot() {
+    if (!CFG.SUPABASE_URL || !CFG.SUPABASE_ANON_KEY || !window.supabase) return showAuth('login');
+    sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
+    let recovery = false;
+    sb.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') { recovery = true; showAuth('recovery'); } });
+    const { data } = await sb.auth.getSession();
+    if (recovery) return;
+    if (data.session) await enter(data.session.user); else showAuth('login');
+  }
+
+  /* =====================  UI building blocks  ===================== */
+  function modal({ title, body, buttons }) {
+    const close = () => { ov.remove(); document.removeEventListener('keydown', esc); };
+    const esc = e => { if (e.key === 'Escape') close(); };
+    const err = h('div', { class: 'err' });
+    const ov = h('div', { class: 'ov', onmousedown: e => { if (e.target === ov) close(); } },
+      h('div', { class: 'dlg', role: 'dialog', 'aria-label': title },
+        h('h3', {}, title), body, err,
+        h('div', { class: 'acts' }, buttons.map(b => h('button', { class: 'btn sm ' + (b.kind || ''), onclick: () => b.onClick(close, m => { err.textContent = m || ''; }) }, b.label)))));
+    document.body.append(ov);
+    document.addEventListener('keydown', esc);
+    const f = ov.querySelector('input[type=text],input[type=number],select,textarea'); if (f) f.focus();
+    return close;
+  }
+  const confirmBox = (title, msg, yesLabel, onYes) => modal({
+    title, body: h('p', { style: 'margin:0;color:var(--muted)' }, msg),
+    buttons: [{ label: 'Cancelar', kind: 'ghost', onClick: c => c() }, { label: yesLabel, kind: 'danger', onClick: c => { c(); onYes(); } }]
+  });
+
+  /* generic form: fields -> {root, get()} */
+  function form(fields) {
+    const getters = {}, root = h('div', { class: 'form' });
+    fields.forEach(f => {
+      let el;
+      if (f.type === 'text' || f.type === 'number') el = h('input', { type: f.type, value: f.value ?? '', maxlength: f.max, placeholder: f.placeholder, step: f.step, min: f.min }), getters[f.key] = () => f.type === 'number' ? Number(el.value || 0) : el.value.trim();
+      else if (f.type === 'textarea') el = h('textarea', { rows: 2, value: f.value ?? '' }), getters[f.key] = () => el.value.trim();
+      else if (f.type === 'datetime') el = h('input', { type: 'datetime-local', step: 1, value: toLocalInput(f.value) }), getters[f.key] = () => new Date(el.value).getTime();
+      else if (f.type === 'select') el = h('select', { value: f.value ?? '' }, f.options.map(o => h('option', { value: o.value }, o.label))), getters[f.key] = () => el.value;
+      else if (f.type === 'checkbox') el = h('input', { type: 'checkbox', checked: f.value }), getters[f.key] = () => el.checked;
+      else if (f.type === 'multicheck') {
+        const boxes = f.options.map(o => ({ o, i: h('input', { type: 'checkbox', checked: (f.value || []).includes(o.value) }) }));
+        el = f.options.length ? h('div', { class: 'mc' }, boxes.map(b => h('label', {}, b.i, b.o.label))) : h('div', { class: 'hint', style: 'margin:0' }, f.empty || 'Nada que elegir todavía.');
+        getters[f.key] = () => boxes.filter(b => b.i.checked).map(b => b.o.value);
+      } else if (f.type === 'color') {
+        let cur = f.value || PALETTE[0];
+        const btns = PALETTE.map(c => h('button', { type: 'button', class: c === cur ? 'on' : '', style: 'background:' + c, 'aria-label': c, onclick: () => { cur = c; btns.forEach((b, i) => b.classList.toggle('on', PALETTE[i] === c)); } }));
+        el = h('div', { class: 'sw' }, btns); getters[f.key] = () => cur;
+      }
+      root.append(h('label', { class: 'fl' + (f.type === 'checkbox' ? ' inline' : '') }, h('span', {}, f.label), el));
+    });
+    return { root, get: () => Object.fromEntries(Object.entries(getters).map(([k, g]) => [k, g()])) };
+  }
+  const projectOptions = (withNone = true, includeId) => [].concat(withNone ? [{ value: '', label: 'Sin proyecto' }] : [],
+    state.projects.filter(p => !p.archived || p.id === includeId).map(p => ({ value: p.id, label: p.name })));
+  const tagOptions = () => state.tags.filter(t => !t.archived).map(t => ({ value: t.id, label: t.name }));
+
+  /* entry editor (edit or add manually) */
+  function entryDialog(task) {
+    const isNew = !task;
+    const t = task || { id: uid(), userId: me.id, text: '', status: false, start: Date.now() - HOUR, end: Date.now(), projectId: '', tagIds: [], billable: S().defBillable };
+    const f = form([
+      { key: 'text', label: 'Descripción', type: 'text', value: t.text, max: 120, placeholder: '¿En qué has trabajado?' },
+      { key: 'projectId', label: 'Proyecto', type: 'select', value: t.projectId || '', options: projectOptions(true, t.projectId) },
+      { key: 'tagIds', label: 'Etiquetas', type: 'multicheck', value: t.tagIds || [], options: tagOptions(), empty: 'Aún no hay etiquetas: crea alguna en Etiquetas.' },
+      { key: 'billable', label: 'Facturable', type: 'checkbox', value: !!t.billable },
+      { key: 'start', label: 'Inicio', type: 'datetime', value: t.start },
+      { key: 'end', label: 'Fin', type: 'datetime', value: t.end }
+    ]);
+    modal({
+      title: isNew ? 'Añadir tiempo manualmente' : 'Editar entrada', body: f.root,
+      buttons: [
+        { label: 'Cancelar', kind: 'ghost', onClick: c => c() },
+        { label: 'Guardar', onClick: (c, err) => {
+          const v = f.get();
+          if (!isFinite(v.start) || !isFinite(v.end)) return err('Escribe una hora de inicio y de fin válidas.');
+          if (v.end <= v.start) return err('El fin debe ser posterior al inicio.');
+          if (S().requireProject && !v.projectId) return err('En este equipo hay que elegir un proyecto.');
+          Object.assign(t, { text: v.text || 'Tarea', projectId: v.projectId, tagIds: v.tagIds, billable: v.billable, start: v.start, end: v.end });
+          if (isNew) state.tasks.unshift(t);
+          persist(); c(); render(); toast(isNew ? 'Entrada añadida' : 'Entrada actualizada');
+        } }
+      ]
+    });
+  }
+
+  /* =====================  timer  ===================== */
+  function tick() {
+    clearInterval(ticker);
+    const c = $('#clock'); if (!c) return;
+    const upd = () => { const el = $('#clock'); if (el) el.textContent = state.running ? clockFmt(Date.now() - state.running.startedAt) : '00:00:00'; };
+    upd();
+    if (state.running) ticker = setInterval(upd, 250);
+  }
+  function toggleTimer() {
+    if (state.running) {
+      const end = Date.now(), r = state.running;
+      state.tasks.unshift({ id: uid(), userId: me.id, text: (r.name || '').trim() || 'Tarea', status: false, start: r.startedAt, end, projectId: r.projectId || '', tagIds: r.tagIds || [], billable: !!r.billable });
+      state.running = null;
+      draft = { projectId: '', tagIds: [], billable: S().defBillable };
+      toast('Entrada guardada');
+    } else {
+      if (S().requireProject && !draft.projectId) return toast('Elige primero un proyecto');
+      state.running = { startedAt: Date.now(), name: ($('#name') ? $('#name').value : '').trim(), projectId: draft.projectId, tagIds: draft.tagIds.slice(), billable: draft.billable };
+    }
+    persist(); render();
+  }
+  const syncRunning = () => { if (state.running) { Object.assign(state.running, { projectId: draft.projectId, tagIds: draft.tagIds.slice(), billable: draft.billable }); persist(); } };
+
+  /* =====================  VIEWS  ===================== */
+  const NAV = [
+    ['tracker', '⏱', 'Cronómetro'], ['calendar', '📅', 'Calendario'], ['dashboard', '▦', 'Panel'], ['reports', 'Σ', 'Informes'],
+    ['projects', '📁', 'Proyectos'], ['team', '👥', 'Equipo'], ['clients', '👤', 'Clientes'], ['tags', '🏷', 'Etiquetas'], ['workspace', '⚙', 'Ajustes']
+  ];
+  function renderSide() {
+    const s = $('#side'); s.textContent = '';
+    s.append(h('div', { class: 'ws' }, S().logo ? h('img', { src: S().logo, alt: '' }) : h('div', { class: 'dot' }, (S().workspace || 'W').slice(0, 1).toUpperCase()), h('span', {}, S().workspace || 'Equipo')));
+    NAV.forEach(([k, i, l]) => s.append(h('a', { class: k === route ? 'on' : '', href: '#' + k }, h('i', {}, i), l)));
+  }
+
+  function render() {
+    document.body.classList.toggle('nonadmin', !isAdmin());
+    renderSide();
+    const c = $('#content'); c.textContent = '';
+    const v = VIEWS[route] || VIEWS.tracker;
+    c.append(v());
+    tick();
+    if (route === 'calendar') { const sc = $('.cal-scroll'); if (sc) sc.scrollTop = 7 * 36 - 10; }
+  }
+
+  const statusLine = () => h('p', { class: 'status' }, 'Tus horas las ve todo el equipo.');
+  const emptyBox = (big, title, text) => h('div', { class: 'empty' }, h('div', { class: 'big' }, big), h('h3', {}, title), h('p', {}, text));
+
+  /* ---------- Time tracker ---------- */
+  function tagsLabel() { return draft.tagIds.length ? `🏷 ${draft.tagIds.length}` : '🏷'; }
+  function trackerView() {
+    const root = h('div');
+    root.append(h('h1', { class: 'title' }, 'Cronómetro'), statusLine());
+    const name = h('input', { class: 'nm', id: 'name', type: 'text', maxlength: 120, placeholder: '¿En qué estás trabajando?', autocomplete: 'off', value: state.running ? state.running.name || '' : draft.name || '',
+      onkeydown: e => { if (e.key === 'Enter') toggleTimer(); },
+      oninput: () => { draft.name = name.value; if (state.running) { state.running.name = name.value.trim(); persist(); } } });
+    const proj = h('select', { 'aria-label': 'Proyecto', value: draft.projectId, onchange: () => {
+      draft.projectId = proj.value; const p = pById(proj.value); draft.billable = p ? !!p.billable : S().defBillable; syncRunning(); render(); } },
+      projectOptions(true, draft.projectId).map(o => h('option', { value: o.value }, o.label)));
+    proj.value = draft.projectId;
+    const tagBtn = h('button', { class: 'tgl' + (draft.tagIds.length ? ' on' : ''), title: 'Etiquetas', onclick: () => {
+      const f = form([{ key: 'tagIds', label: 'Etiquetas', type: 'multicheck', value: draft.tagIds, options: tagOptions(), empty: 'Aún no hay etiquetas: crea alguna en Etiquetas.' }]);
+      modal({ title: 'Etiquetas', body: f.root, buttons: [{ label: 'Cancelar', kind: 'ghost', onClick: c => c() }, { label: 'Aplicar', onClick: c => { draft.tagIds = f.get().tagIds; syncRunning(); c(); render(); } }] });
+    } }, tagsLabel());
+    const bill = h('button', { class: 'tgl' + (draft.billable ? ' on' : ''), title: 'Facturable', onclick: () => { draft.billable = !draft.billable; syncRunning(); render(); } }, '$');
+    const go = h('button', { class: 'btn go' + (state.running ? ' stop' : ''), id: 'go', onclick: toggleTimer }, state.running ? 'Parar' : 'Iniciar');
+    root.append(h('div', { class: 'bar' }, name, proj, tagBtn, bill, h('div', { class: 'clock', id: 'clock' }, '00:00:00'), go));
+    root.append(h('div', { class: 'toolbar' },
+      h('span', { class: 'hint', style: 'margin:0' }, 'Pulsa el nombre de una entrada para renombrarla. ✓ la marca como hecha.'), h('span', { class: 'sp' }),
+      h('button', { class: 'btn ghost sm', onclick: () => entryDialog(null) }, '+ Añadir tiempo manualmente')));
+
+    if (!myTasks().length) { root.append(emptyBox('⏱', 'Aún no tienes entradas', 'Escribe en qué trabajas y pulsa Iniciar.')); return root; }
+    const groups = new Map();
+    myTasks().sort((a, b) => b.start - a.start).forEach(t => { const k = dayKey(t.start); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(t); });
+    groups.forEach(items => {
+      const total = items.reduce((s, t) => s + (t.end - t.start), 0);
+      root.append(h('div', { class: 'day' },
+        h('div', { class: 'day-h' }, h('span', {}, dayLabel(items[0].start)), h('span', {}, 'Total: ', h('b', {}, fmtD(total)))),
+        h('div', { class: 'rows' }, items.map(entryRow))));
+    });
+    return root;
+  }
+  function entryRow(t) {
+    const nm = h('div', { class: 't ' + (t.status ? 'done' : 'todo'), title: 'Pulsa para renombrar' }, t.text);
+    nm.addEventListener('click', () => {
+      const inp = h('input', { class: 'edit', type: 'text', maxlength: 120, value: t.text });
+      nm.replaceWith(inp); inp.focus(); inp.select();
+      let done = false;
+      const fin = save => { if (done) return; done = true; if (save && inp.value.trim() && inp.value.trim() !== t.text) { t.text = inp.value.trim(); persist(); } render(); };
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') fin(true); if (e.key === 'Escape') fin(false); });
+      inp.addEventListener('blur', () => fin(true));
+    });
+    const p = pById(t.projectId);
+    const pj = h('div', { class: 'pj', title: p ? p.name : '' }, p ? [h('span', { class: 'pdot', style: 'background:' + p.color }), p.name] : h('span', { style: 'color:var(--muted)' }, '—'));
+    const tags = (t.tagIds || []).map(id => tById(id)).filter(Boolean);
+    return h('div', { class: 'row' }, nm, pj, tags.length ? h('div', {}, tags.map(x => h('span', { class: 'tag-chip' }, x.name))) : null,
+      h('div', { class: 'bill', title: t.billable ? 'Facturable' : '' }, t.billable ? '$' : ''),
+      h('div', { class: 'range' }, fmtTime(t.start) + ' – ' + fmtTime(t.end)),
+      h('div', { class: 'dur' }, fmtD(t.end - t.start)),
+      h('button', { class: 'ib', title: t.status ? 'Marcar como no hecha' : 'Marcar como hecha', onclick: () => { t.status = !t.status; persist(); render(); } }, '✓'),
+      h('button', { class: 'ib', title: 'Editar', onclick: () => entryDialog(t) }, '✎'),
+      h('button', { class: 'ib del', title: 'Eliminar', onclick: () => { state.tasks = state.tasks.filter(x => x.id !== t.id); persist(); render(); toast('Entrada eliminada'); } }, '🗑'));
+  }
+
+  /* ---------- Calendar ---------- */
+  let calStart = null;
+  function calendarView() {
+    if (calStart == null) calStart = startOfWeek(Date.now());
+    const root = h('div');
+    const end = addDays(calStart, 7);
+    root.append(h('h1', { class: 'title' }, 'Calendario'));
+    root.append(h('div', { class: 'toolbar' },
+      h('button', { class: 'btn ghost sm', onclick: () => { calStart = addDays(calStart, -7); render(); }, 'aria-label': 'Semana anterior' }, '‹'),
+      h('button', { class: 'btn ghost sm', onclick: () => { calStart = addDays(calStart, 7); render(); }, 'aria-label': 'Semana siguiente' }, '›'),
+      h('button', { class: 'btn ghost sm', onclick: () => { calStart = startOfWeek(Date.now()); render(); } }, 'Hoy'),
+      h('b', {}, `${fmtDate(calStart)} – ${fmtDate(addDays(calStart, 6))} ${new Date(calStart).getFullYear()}`), h('span', { class: 'sp' }),
+      h('button', { class: 'btn sm', onclick: () => entryDialog(null) }, '+ Añadir tiempo manualmente')));
+    const days = [...Array(7)].map((_, i) => addDays(calStart, i));
+    const today = dayKey(Date.now());
+    const head = h('div', { class: 'cal-head' }, h('div', { style: 'border:0' }),
+      days.map(d => h('div', { class: dayKey(d) === today ? 'today' : '' }, new Date(d).toLocaleDateString('es-ES', { weekday: 'short' }), h('b', {}, new Date(d).getDate()))));
+    const gut = h('div', { class: 'gut', style: 'height:864px' }, [...Array(24)].map((_, i) => i ? h('span', { style: `top:${i * 36}px` }, pad(i) + ':00') : null));
+    const cols = days.map(d => {
+      const col = h('div', { class: 'cal-col' + (S().workDays.includes(new Date(d).getDay()) ? '' : ' off') + (dayKey(d) === today ? ' today' : ''), style: 'height:864px' });
+      const dEnd = addDays(d, 1);
+      const items = myTasks().filter(t => t.start < dEnd && t.end > d).sort((a, b) => a.start - b.start);
+      const lanes = [];
+      items.forEach(t => { let i = lanes.findIndex(e => e <= t.start); if (i < 0) { i = lanes.length; lanes.push(0); } lanes[i] = t.end; t._l = i; });
+      items.forEach(t => {
+        const s = Math.max(t.start, d), e = Math.min(t.end, dEnd);
+        const top = (s - d) / HOUR * 36, ht = Math.max(16, (e - s) / HOUR * 36 - 1), w = 100 / lanes.length;
+        const b = h('div', { class: 'blk', tabindex: 0, style: `top:${top}px;height:${ht}px;left:${t._l * w}%;width:calc(${w}% - 2px);--c:${pColor(t.projectId)}`, onclick: () => entryDialog(t), onkeydown: ev => { if (ev.key === 'Enter') entryDialog(t); } },
+          h('b', {}, t.text), ht > 30 ? pName(t.projectId) : null);
+        hover(b, [t.text, `${pName(t.projectId)} · ${fmtTime(t.start)}–${fmtTime(t.end)} · ${fmtD(t.end - t.start)}`]);
+        col.append(b);
+      });
+      if (dayKey(d) === today) col.append(h('div', { class: 'nowline', style: `top:${(Date.now() - d) / HOUR * 36}px` }));
+      return col;
+    });
+    root.append(h('div', { class: 'cal' }, head, h('div', { class: 'cal-scroll' }, h('div', { class: 'cal-body' }, gut, cols))));
+    if (state.running) root.append(h('p', { class: 'hint' }, 'Hay un cronómetro en marcha: aparecerá aquí cuando lo pares.'));
+    return root;
+  }
+
+  /* ---------- Dashboard ---------- */
+  let dashRange = 'week', dashTable = false, dashUser = '';
+  function rangeFor(k) {
+    const now = Date.now();
+    if (k === 'week') { const s = startOfWeek(now); return [s, addDays(s, 7), 'Esta semana']; }
+    if (k === 'last') { const s = addDays(startOfWeek(now), -7); return [s, addDays(s, 7), 'Semana pasada']; }
+    const d = new Date(now); const s = new Date(d.getFullYear(), d.getMonth(), 1).getTime(); return [s, new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime(), 'Este mes'];
+  }
+  const inRange = (t, a, b) => t.start >= a && t.start < b;
+  const niceMax = hrs => { for (const n of [1, 2, 4, 5, 8, 10, 12, 16, 20, 24, 40, 60, 80, 100, 150, 200, 400]) if (hrs <= n) return n; return Math.ceil(hrs / 100) * 100; };
+
+  function columnChart(data) {
+    const W = 720, H = 230, L = 42, R = 8, T = 10, B = 26, pw = W - L - R, ph = H - T - B;
+    const max = niceMax(Math.max(...data.map(d => d.ms)) / HOUR || 1);
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('class', 'chart'); svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Tiempo por día');
+    const add = (n, a, txt) => { const e = document.createElementNS(svg.namespaceURI, n); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; svg.append(e); return e; };
+    [0, .5, 1].forEach(f => { const y = T + ph - f * ph; add('line', { x1: L, x2: W - R, y1: y, y2: y, stroke: '#e3e8ee', 'stroke-width': 1 }); add('text', { x: L - 6, y: y + 4, 'text-anchor': 'end' }, +(max * f).toFixed(1) + 'h'); });
+    const slot = pw / data.length, bw = Math.min(24, slot * .6);
+    data.forEach((d, i) => {
+      const cx = L + slot * i + slot / 2, x = cx - bw / 2, ht = d.ms / HOUR / max * ph, y = T + ph - ht, r = Math.min(4, ht);
+      if (ht > 0.5) add('path', { d: `M${x},${T + ph}V${y + r}Q${x},${y} ${x + r},${y}H${x + bw - r}Q${x + bw},${y} ${x + bw},${y + r}V${T + ph}Z`, fill: 'var(--series-1)' });
+      if (data.length <= 8 || i % 5 === 0) add('text', { x: cx, y: H - 8, 'text-anchor': 'middle' }, d.label);
+      const hit = add('rect', { x: L + slot * i, y: T, width: slot, height: ph, fill: 'transparent', tabindex: 0, 'aria-label': `${d.title}: ${fmtD(d.ms)}` });
+      hover(hit, [d.title, fmtD(d.ms) + (S().durFmt === 'decimal' ? ' h' : '')]);
+    });
+    return svg;
+  }
+  function dashboardView() {
+    const [a, b, label] = rangeFor(dashRange);
+    const tasks = state.tasks.filter(t => inRange(t, a, b) && (!dashUser || t.userId === dashUser));
+    const total = tasks.reduce((s, t) => s + t.end - t.start, 0);
+    const billMs = tasks.filter(t => t.billable).reduce((s, t) => s + t.end - t.start, 0);
+    const root = h('div', {}, h('h1', { class: 'title' }, 'Panel'),
+      h('p', { class: 'status' }, dashUser ? 'Horas de ' + uName(dashUser) + '.' : 'Horas de todo el equipo.'));
+    const seg = h('div', { class: 'seg' }, [['week', 'Esta semana'], ['last', 'Semana pasada'], ['month', 'Este mes']].map(([k, l]) => h('button', { class: dashRange === k ? 'on' : '', onclick: () => { dashRange = k; render(); } }, l)));
+    const who = h('select', { 'aria-label': 'Persona', onchange: () => { dashUser = who.value; render(); } },
+      [h('option', { value: '' }, 'Todo el equipo')].concat(state.members.map(m => h('option', { value: m.id }, m.name))));
+    who.value = dashUser;
+    root.append(h('div', { class: 'toolbar' }, seg, who));
+    root.append(h('div', { class: 'tiles' },
+      h('div', { class: 'tile' }, h('small', {}, 'Tiempo total'), h('div', {}, fmtD(total))),
+      h('div', { class: 'tile' }, h('small', {}, 'Tiempo facturable'), h('div', {}, fmtD(billMs))),
+      h('div', { class: 'tile' }, h('small', {}, 'Entradas'), h('div', {}, tasks.length))));
+    if (!tasks.length) { root.append(emptyBox('▦', 'Nada registrado ' + label.toLowerCase(), 'Registra horas y aquí verás los gráficos.')); return root; }
+
+    const days = []; for (let d = a; d < b; d = addDays(d, 1)) days.push(d);
+    const perDay = days.map(d => ({ ms: tasks.filter(t => dayKey(t.start) === dayKey(d)).reduce((s, t) => s + t.end - t.start, 0),
+      label: days.length <= 8 ? new Date(d).toLocaleDateString('es-ES', { weekday: 'short' }) : String(new Date(d).getDate()),
+      title: new Date(d).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' }) }));
+    const chartPanel = h('div', { class: 'panel pad' }, h('h3', {}, 'Tiempo por día', h('button', { class: 'btn ghost sm', onclick: () => { dashTable = !dashTable; render(); } }, dashTable ? 'Gráfico' : 'Tabla')));
+    if (dashTable) chartPanel.append(h('table', { class: 'tbl' }, h('thead', {}, h('tr', {}, h('th', {}, 'Día'), h('th', { class: 'r' }, 'Tiempo'))), h('tbody', {}, perDay.map(d => h('tr', {}, h('td', {}, d.title), h('td', { class: 'r' }, fmtD(d.ms)))))));
+    else chartPanel.append(columnChart(perDay));
+
+    const bars = (map, nameOf, colorOf) => {
+      const list = [...map.entries()].sort((x, y) => y[1] - x[1]).slice(0, 8), mx = list[0][1];
+      const hb = h('div', { class: 'hb' });
+      list.forEach(([id, ms]) => {
+        const bar = h('div', { class: 'fill', tabindex: 0, style: `width:${Math.max(2, ms / mx * 70)}%;background:${colorOf(id)}`, 'aria-label': `${nameOf(id)}: ${fmtD(ms)}` });
+        hover(bar, [nameOf(id), fmtD(ms) + ' · ' + Math.round(ms / total * 100) + '%']);
+        hb.append(h('div', { class: 'lbl', title: nameOf(id) }, nameOf(id)), h('div', { class: 'trk' }, bar, h('span', { class: 'val' }, fmtD(ms))));
+      });
+      return hb;
+    };
+    const byP = new Map(); tasks.forEach(t => byP.set(t.projectId || '', (byP.get(t.projectId || '') || 0) + t.end - t.start));
+    root.append(h('div', { class: 'twocol' }, chartPanel, h('div', { class: 'panel pad' }, h('h3', {}, 'Proyectos con más horas'), bars(byP, pName, pColor))));
+    if (!dashUser) {
+      const byU = new Map(); tasks.forEach(t => byU.set(t.userId, (byU.get(t.userId) || 0) + t.end - t.start));
+      root.append(h('div', { class: 'panel pad', style: 'margin-top:14px' }, h('h3', {}, 'Horas por persona'), bars(byU, uName, () => 'var(--series-1)')));
+    }
+    return root;
+  }
+
+  /* ---------- Informes ---------- */
+  let rep = null;
+  function reportsView() {
+    if (!rep) { const s = startOfWeek(Date.now()); rep = { from: s, to: addDays(s, 6), user: '', project: '', tag: '', bill: '', group: 'person' }; }
+    const root = h('div', {}, h('h1', { class: 'title' }, 'Informes'), h('p', { class: 'status' }, 'Horas de todo el equipo.'));
+    const sel = (key, opts) => { const e = h('select', { value: rep[key], onchange: () => { rep[key] = e.value; render(); } }, opts.map(o => h('option', { value: o.value }, o.label))); e.value = rep[key]; return e; };
+    const dIn = key => h('input', { type: 'date', value: dateInput(rep[key]), onchange: e => { if (e.target.value) { rep[key] = parseDateInput(e.target.value); render(); } } });
+    root.append(h('div', { class: 'toolbar' }, dIn('from'), '–', dIn('to'),
+      sel('user', [{ value: '', label: 'Todas las personas' }].concat(state.members.map(m => ({ value: m.id, label: m.name })))),
+      sel('project', [{ value: '', label: 'Todos los proyectos' }, { value: '__none', label: 'Sin proyecto' }].concat(state.projects.map(p => ({ value: p.id, label: p.name })))),
+      sel('tag', [{ value: '', label: 'Todas las etiquetas' }].concat(state.tags.map(t => ({ value: t.id, label: t.name })))),
+      sel('bill', [{ value: '', label: 'Facturable y no' }, { value: 'y', label: 'Facturable' }, { value: 'n', label: 'No facturable' }]),
+      sel('group', [{ value: 'person', label: 'Agrupar por persona' }, { value: 'project', label: 'Agrupar por proyecto' }, { value: 'tag', label: 'Agrupar por etiqueta' }, { value: 'client', label: 'Agrupar por cliente' }, { value: 'day', label: 'Agrupar por día' }])));
+    const a = rep.from, b = addDays(rep.to, 1);
+    const rows = state.tasks.filter(t => t.start >= a && t.start < b
+      && (!rep.user || t.userId === rep.user)
+      && (!rep.project || (rep.project === '__none' ? !t.projectId : t.projectId === rep.project))
+      && (!rep.tag || (t.tagIds || []).includes(rep.tag))
+      && (!rep.bill || (rep.bill === 'y') === !!t.billable)).sort((x, y) => y.start - x.start);
+    const total = rows.reduce((s, t) => s + t.end - t.start, 0);
+    const billMs = rows.filter(t => t.billable).reduce((s, t) => s + t.end - t.start, 0);
+    root.append(h('div', { class: 'tiles' },
+      h('div', { class: 'tile' }, h('small', {}, 'Tiempo total'), h('div', {}, fmtD(total))),
+      h('div', { class: 'tile' }, h('small', {}, 'Facturable'), h('div', {}, fmtD(billMs))),
+      h('div', { class: 'tile' }, h('small', {}, 'Entradas'), h('div', {}, rows.length))));
+    if (!rows.length) { root.append(emptyBox('Σ', 'Ninguna entrada coincide', 'Prueba con un rango de fechas más amplio o quita algún filtro.')); return root; }
+
+    const groups = new Map();
+    const add = (k, label, t) => { const g = groups.get(k) || { label, ms: 0, bill: 0 }; g.ms += t.end - t.start; if (t.billable) g.bill += t.end - t.start; groups.set(k, g); };
+    rows.forEach(t => {
+      if (rep.group === 'person') add(t.userId, uName(t.userId), t);
+      else if (rep.group === 'project') add(t.projectId || '', pName(t.projectId), t);
+      else if (rep.group === 'client') { const p = pById(t.projectId), c = p && cById(p.clientId); add(c ? c.id : '', c ? c.name : 'Sin cliente', t); }
+      else if (rep.group === 'day') add(dayKey(t.start), dayLabel(t.start), t);
+      else { const ts = (t.tagIds || []).map(tById).filter(Boolean); if (!ts.length) add('', 'Sin etiqueta', t); ts.forEach(x => add(x.id, x.name, t)); }
+    });
+    const gl = [...groups.values()].sort((x, y) => rep.group === 'day' ? 0 : y.ms - x.ms);
+    root.append(h('table', { class: 'tbl' }, h('thead', {}, h('tr', {}, h('th', {}, 'Grupo'), h('th', { class: 'r' }, 'Tiempo'), h('th', { class: 'r' }, 'Facturable'))),
+      h('tbody', {}, gl.map(g => h('tr', {}, h('td', {}, g.label), h('td', { class: 'r' }, fmtD(g.ms)), h('td', { class: 'r' }, fmtD(g.bill)))))));
+    root.append(h('div', { class: 'toolbar' }, h('h3', { style: 'margin:0' }, 'Entradas detalladas'), h('span', { class: 'sp' }), h('button', { class: 'btn ghost sm', onclick: () => downloadCsv(rows) }, 'Descargar CSV')));
+    root.append(h('table', { class: 'tbl' }, h('thead', {}, h('tr', {}, ['Fecha', 'Persona', 'Descripción', 'Proyecto', 'Etiquetas', 'Tiempo'].map((x, i) => h('th', { class: i === 5 ? 'r' : '' }, x)))),
+      h('tbody', {}, rows.map(t => h('tr', {}, h('td', {}, fmtDate(t.start)), h('td', {}, uName(t.userId)), h('td', {}, t.text, t.billable ? h('span', { class: 'bill', style: 'color:var(--green);margin-left:6px;font-weight:700' }, '$') : null),
+        h('td', {}, pById(t.projectId) ? [h('span', { class: 'pdot', style: 'background:' + pColor(t.projectId) }), pName(t.projectId)] : '—'),
+        h('td', {}, (t.tagIds || []).map(tById).filter(Boolean).map(x => h('span', { class: 'tag-chip' }, x.name))), h('td', { class: 'r' }, fmtD(t.end - t.start)))))));
+    return root;
+  }
+  function downloadCsv(rows) {
+    const q = s => '"' + String(s).replace(/"/g, '""') + '"';        // separador ; y coma decimal: se abre bien en Excel en español
+    const lines = [['Persona', 'Descripción', 'Proyecto', 'Cliente', 'Etiquetas', 'Facturable', 'Inicio', 'Fin', 'Horas'].join(';')].concat(rows.map(t => {
+      const p = pById(t.projectId), c = p && cById(p.clientId), hrs = (t.end - t.start) / HOUR;
+      return [q(uName(t.userId)), q(t.text), q(p ? p.name : ''), q(c ? c.name : ''), q((t.tagIds || []).map(tById).filter(Boolean).map(x => x.name).join(', ')), t.billable ? 'Sí' : 'No', q(toLocalInput(t.start).replace('T', ' ')), q(toLocalInput(t.end).replace('T', ' ')), hrs.toFixed(2).replace('.', ',')].join(';');
+    }));
+    const url = URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+    const a = h('a', { href: url, download: `horas_${dateInput(rep.from)}_${dateInput(rep.to)}.csv` });
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  /* ---------- Projects ---------- */
+  let fl = { projects: { st: 'active', q: '' }, clients: { st: 'active', q: '' }, tags: { st: 'active', q: '' } };
+  const filterBar = (key, placeholder, addForm) => {
+    const st = h('select', { value: fl[key].st, onchange: () => { fl[key].st = st.value; render(); } }, [['active', 'Ver activos'], ['archived', 'Ver archivados'], ['all', 'Ver todos']].map(([v, l]) => h('option', { value: v }, l))); st.value = fl[key].st;
+    const q = h('input', { type: 'text', placeholder: 'Buscar por nombre', value: fl[key].q, oninput: () => { fl[key].q = q.value; clearTimeout(q._t); q._t = setTimeout(() => { render(); const n = $('#content input[type=text]'); if (n) { n.focus(); n.setSelectionRange(99, 99); } }, 250); } });
+    return h('div', { class: 'toolbar' }, st, q, h('span', { class: 'sp' }), addForm);
+  };
+  const passes = (key, o) => (fl[key].st === 'all' || (fl[key].st === 'archived') === !!o.archived) && o.name.toLowerCase().includes(fl[key].q.toLowerCase());
+
+  function projectDialog(p) {
+    const isNew = !p;
+    const o = p || { id: uid(), name: '', clientId: '', color: PALETTE[state.projects.length % PALETTE.length], billable: S().defBillable, archived: false };
+    const f = form([
+      { key: 'name', label: 'Nombre del proyecto', type: 'text', value: o.name, max: 60 },
+      { key: 'clientId', label: 'Cliente', type: 'select', value: o.clientId || '', options: [{ value: '', label: 'Sin cliente' }].concat(state.clients.filter(c => !c.archived || c.id === o.clientId).map(c => ({ value: c.id, label: c.name }))) },
+      { key: 'color', label: 'Color', type: 'color', value: o.color },
+      { key: 'billable', label: 'Facturable por defecto', type: 'checkbox', value: o.billable }
+    ]);
+    modal({ title: isNew ? 'Nuevo proyecto' : 'Editar proyecto', body: f.root, buttons: [{ label: 'Cancelar', kind: 'ghost', onClick: c => c() },
+      { label: 'Guardar', onClick: (c, err) => { const v = f.get(); if (!v.name) return err('Escribe un nombre.'); Object.assign(o, v); if (isNew) state.projects.push(o); persist(); c(); render(); toast('Proyecto guardado'); } }] });
+  }
+  function projectsView() {
+    const root = h('div', {}, h('h1', { class: 'title' }, 'Proyectos'));
+    root.append(filterBar('projects', '', h('button', { class: 'btn sm', onclick: () => projectDialog(null) }, '+ Nuevo proyecto')));
+    const list = state.projects.filter(p => passes('projects', p));
+    if (!list.length) { root.append(emptyBox('📁', state.projects.length ? 'Ningún proyecto coincide' : 'Aún no hay proyectos', state.projects.length ? 'Cambia el filtro o la búsqueda.' : 'Crea el primer proyecto para organizar las horas.')); return root; }
+    root.append(h('table', { class: 'tbl' }, h('thead', {}, h('tr', {}, ['Nombre', 'Cliente', 'Registrado', 'Facturable', ''].map((x, i) => h('th', { class: i === 2 ? 'r' : '' }, x)))),
+      h('tbody', {}, list.map(p => {
+        const ms = state.tasks.filter(t => t.projectId === p.id).reduce((s, t) => s + t.end - t.start, 0), c = cById(p.clientId);
+        return h('tr', { class: p.archived ? 'arch' : '' }, h('td', {}, h('span', { class: 'pdot', style: 'background:' + p.color }), p.name), h('td', {}, c ? c.name : '—'), h('td', { class: 'r' }, fmtD(ms)), h('td', {}, p.billable ? '$ Sí' : 'No'),
+          h('td', { class: 'r', style: 'white-space:nowrap' },
+            h('button', { class: 'ib', title: 'Editar', onclick: () => projectDialog(p) }, '✎'),
+            h('button', { class: 'ib', title: p.archived ? 'Restaurar' : 'Archivar', onclick: () => { p.archived = !p.archived; persist(); render(); } }, p.archived ? '↩' : '🗄'),
+            h('button', { class: 'ib del adm', title: 'Eliminar', onclick: () => confirmBox('Eliminar proyecto', `¿Eliminar “${p.name}”? Sus entradas se conservan pero se quedan sin proyecto.`, 'Eliminar', () => { state.projects = state.projects.filter(x => x.id !== p.id); state.tasks.forEach(t => { if (t.projectId === p.id) t.projectId = ''; }); if (draft.projectId === p.id) draft.projectId = ''; persist(); render(); }) }, '🗑')));
+      }))));
+    return root;
+  }
+
+  /* ---------- Clients ---------- */
+  function clientDialog(c0) {
+    const isNew = !c0, o = c0 || { id: uid(), name: '', address: '', archived: false };
+    const f = form([{ key: 'name', label: 'Nombre del cliente', type: 'text', value: o.name, max: 60 }, { key: 'address', label: 'Dirección', type: 'textarea', value: o.address }]);
+    modal({ title: isNew ? 'Nuevo cliente' : 'Editar cliente', body: f.root, buttons: [{ label: 'Cancelar', kind: 'ghost', onClick: c => c() },
+      { label: 'Guardar', onClick: (c, err) => { const v = f.get(); if (!v.name) return err('Escribe un nombre.'); Object.assign(o, v); if (isNew) state.clients.push(o); persist(); c(); render(); toast('Cliente guardado'); } }] });
+  }
+  function clientsView() {
+    const root = h('div', {}, h('h1', { class: 'title' }, 'Clientes'));
+    root.append(filterBar('clients', '', h('button', { class: 'btn sm', onclick: () => clientDialog(null) }, '+ Nuevo cliente')));
+    const list = state.clients.filter(c => passes('clients', c));
+    if (!list.length) { root.append(emptyBox('👤', state.clients.length ? 'Ningún cliente coincide' : 'Aún no hay clientes', state.clients.length ? 'Cambia el filtro o la búsqueda.' : 'Añade clientes para agrupar tus proyectos.')); return root; }
+    root.append(h('table', { class: 'tbl' }, h('thead', {}, h('tr', {}, ['Nombre', 'Dirección', 'Proyectos', ''].map(x => h('th', {}, x)))),
+      h('tbody', {}, list.map(c => h('tr', { class: c.archived ? 'arch' : '' }, h('td', {}, c.name), h('td', { style: 'white-space:pre-line' }, c.address || '—'), h('td', {}, state.projects.filter(p => p.clientId === c.id).length),
+        h('td', { class: 'r', style: 'white-space:nowrap' },
+          h('button', { class: 'ib', title: 'Editar', onclick: () => clientDialog(c) }, '✎'),
+          h('button', { class: 'ib', title: c.archived ? 'Restaurar' : 'Archivar', onclick: () => { c.archived = !c.archived; persist(); render(); } }, c.archived ? '↩' : '🗄'),
+          h('button', { class: 'ib del adm', title: 'Eliminar', onclick: () => confirmBox('Eliminar cliente', `¿Eliminar “${c.name}”? Sus proyectos se conservan sin cliente.`, 'Eliminar', () => { state.clients = state.clients.filter(x => x.id !== c.id); state.projects.forEach(p => { if (p.clientId === c.id) p.clientId = ''; }); persist(); render(); }) }, '🗑')))))));
+    return root;
+  }
+
+  /* ---------- Tags ---------- */
+  function tagsView() {
+    const root = h('div', {}, h('h1', { class: 'title' }, 'Etiquetas'));
+    const inp = h('input', { type: 'text', placeholder: 'Añadir una etiqueta nueva', maxlength: 40, id: 'newtag' });
+    const addTag = () => { const n = inp.value.trim(); if (!n) return; if (state.tags.some(t => t.name.toLowerCase() === n.toLowerCase())) return toast('Esa etiqueta ya existe'); state.tags.push({ id: uid(), name: n, archived: false }); persist(); render(); toast('Etiqueta añadida'); };
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') addTag(); });
+    root.append(filterBar('tags', '', h('div', { class: 'addrow' }, inp, h('button', { class: 'btn sm', onclick: addTag }, 'Añadir'))));
+    const list = state.tags.filter(t => passes('tags', t));
+    if (!list.length) { root.append(emptyBox('🏷', state.tags.length ? 'Ninguna etiqueta coincide' : 'Aún no hay etiquetas', state.tags.length ? 'Cambia el filtro o la búsqueda.' : 'Las etiquetas sirven para clasificar entradas y filtrarlas en los informes.')); return root; }
+    root.append(h('table', { class: 'tbl' }, h('thead', {}, h('tr', {}, h('th', {}, 'Nombre'), h('th', {}, 'Entradas'), h('th', {}, ''))),
+      h('tbody', {}, list.map(t => h('tr', { class: t.archived ? 'arch' : '' }, h('td', {}, t.name), h('td', {}, state.tasks.filter(x => (x.tagIds || []).includes(t.id)).length),
+        h('td', { class: 'r', style: 'white-space:nowrap' },
+          h('button', { class: 'ib', title: 'Renombrar', onclick: () => { const f = form([{ key: 'name', label: 'Nombre de la etiqueta', type: 'text', value: t.name, max: 40 }]); modal({ title: 'Renombrar etiqueta', body: f.root, buttons: [{ label: 'Cancelar', kind: 'ghost', onClick: c => c() }, { label: 'Guardar', onClick: (c, err) => { const n = f.get().name; if (!n) return err('Escribe un nombre.'); t.name = n; persist(); c(); render(); } }] }); } }, '✎'),
+          h('button', { class: 'ib', title: t.archived ? 'Restaurar' : 'Archivar', onclick: () => { t.archived = !t.archived; persist(); render(); } }, t.archived ? '↩' : '🗄'),
+          h('button', { class: 'ib del adm', title: 'Eliminar', onclick: () => confirmBox('Eliminar etiqueta', `¿Eliminar “${t.name}”? Se quita de todas las entradas.`, 'Eliminar', () => { state.tags = state.tags.filter(x => x.id !== t.id); state.tasks.forEach(x => { x.tagIds = (x.tagIds || []).filter(i => i !== t.id); }); draft.tagIds = draft.tagIds.filter(i => i !== t.id); persist(); render(); }) }, '🗑')))))));
+    return root;
+  }
+
+  /* ---------- Equipo ---------- */
+  async function updateMember(m, patch, okMsg) {
+    const { error } = await sb.from('profiles').update(patch).eq('id', m.id);
+    if (error) return toast('No se pudo guardar: ' + error.message);
+    Object.assign(m, patch); render(); toast(okMsg || 'Guardado');
+  }
+  async function addInvite(email, role) {
+    const em = email.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return toast('Escribe un correo válido');
+    if (state.members.some(m => m.email === em) || state.invites.some(i => i.email === em)) return toast('Ese correo ya está en el equipo');
+    const { error } = await sb.from('allowed_emails').insert({ email: em, role });
+    if (error) return toast('No se pudo invitar: ' + error.message);
+    state.invites.push({ email: em, role }); render(); toast('Invitada. Pásale el enlace de la web: debe crear su cuenta con ese correo.');
+  }
+  async function removeInvite(i) {
+    const { error } = await sb.from('allowed_emails').delete().eq('email', i.email);
+    if (error) return toast('No se pudo quitar: ' + error.message);
+    state.invites = state.invites.filter(x => x.email !== i.email); render();
+  }
+  function teamView() {
+    const adm = isAdmin(), root = h('div', {}, h('h1', { class: 'title' }, 'Equipo'));
+    root.append(h('div', { class: 'note' }, adm
+      ? 'Para dar acceso a alguien, añade su correo aquí y pásale el enlace de esta web: tendrá que crear su cuenta con ese correo. Todos ven las horas de todos.'
+      : 'Todos los miembros ven las horas de los demás. Solo un administrador puede invitar o quitar personas.'));
+    if (adm) {
+      const em = h('input', { type: 'text', placeholder: 'correo@empresa.com', maxlength: 120, style: 'min-width:240px' });
+      const rl = h('select', {}, [['member', 'Miembro'], ['admin', 'Administrador']].map(([v, l]) => h('option', { value: v }, l)));
+      em.addEventListener('keydown', e => { if (e.key === 'Enter') addInvite(em.value, rl.value); });
+      root.append(h('div', { class: 'toolbar' }, em, rl, h('button', { class: 'btn sm', onclick: () => addInvite(em.value, rl.value) }, '+ Invitar')));
+    }
+    root.append(h('table', { class: 'tbl' }, h('thead', {}, h('tr', {}, ['Nombre', 'Correo', 'Rol', 'Estado', ''].map(x => h('th', {}, x)))),
+      h('tbody', {}, state.members.map(m => h('tr', { class: m.active ? '' : 'arch' }, h('td', {}, m.name, m.id === me.id ? h('span', { class: 'tag-chip', style: 'margin-left:6px' }, 'tú') : null), h('td', {}, m.email || '—'),
+        h('td', {}, m.role === 'admin' ? 'Administrador' : 'Miembro'), h('td', {}, m.active ? 'Activo' : 'Desactivado'),
+        h('td', { class: 'r', style: 'white-space:nowrap' }, adm && m.id !== me.id ? [
+          h('button', { class: 'ib', title: m.role === 'admin' ? 'Quitar administrador' : 'Hacer administrador', onclick: () => updateMember(m, { role: m.role === 'admin' ? 'member' : 'admin' }) }, m.role === 'admin' ? '⭣' : '★'),
+          h('button', { class: 'ib', title: m.active ? 'Desactivar acceso' : 'Activar acceso', onclick: () => m.active ? confirmBox('Desactivar acceso', `${m.name} dejará de poder entrar. Sus horas se conservan.`, 'Desactivar', () => updateMember(m, { active: false }, 'Acceso desactivado')) : updateMember(m, { active: true }, 'Acceso activado') }, m.active ? '🗄' : '↩')] : null))))));
+    if (adm && state.invites.length) {
+      const pend = state.invites.filter(i => !state.members.some(m => m.email === i.email));
+      if (pend.length) {
+        root.append(h('h3', { style: 'margin:22px 0 8px' }, 'Invitaciones pendientes'));
+        root.append(h('table', { class: 'tbl' }, h('thead', {}, h('tr', {}, ['Correo', 'Rol', ''].map(x => h('th', {}, x)))),
+          h('tbody', {}, pend.map(i => h('tr', {}, h('td', {}, i.email), h('td', {}, i.role === 'admin' ? 'Administrador' : 'Miembro'),
+            h('td', { class: 'r' }, h('button', { class: 'ib del', title: 'Quitar invitación', onclick: () => removeInvite(i) }, '🗑')))))));
+      }
+    }
+    return root;
+  }
+
+  /* ---------- Ajustes ---------- */
+  const DAYN = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  function settingsView() {
+    const adm = isAdmin(), s = S(), root = h('div', {}, h('h1', { class: 'title' }, 'Ajustes'));
+    if (!adm) root.append(h('div', { class: 'note' }, 'Los ajustes del equipo solo los puede cambiar un administrador.'));
+    const save = () => { persist(); renderSide(); toast('Guardado'); };
+    const sect = (t, p, lock, ...c) => h('div', { class: 'sect' + (lock ? ' lock' : '') }, h('h3', {}, t), p ? h('p', {}, p) : null, ...c);
+    const file = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/gif', onchange: () => {
+      const f = file.files[0]; if (!f) return;
+      if (f.size > 1024 * 1024) return toast('Tamaño máximo: 1 MB');
+      const rd = new FileReader();
+      rd.onload = () => { const img = new Image(); img.onload = () => { const c = document.createElement('canvas'), k = Math.min(1, 128 / Math.max(img.width, img.height)); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); s.logo = c.toDataURL('image/png'); save(); render(); }; img.onerror = () => toast('No se pudo leer esa imagen'); img.src = rd.result; };
+      rd.readAsDataURL(f);
+    } });
+    root.append(sect('Logo', 'Se muestra junto al nombre del equipo. Formatos: png, jpg, gif. Máximo 1 MB.', true,
+      h('div', { class: 'toolbar', style: 'margin:0' }, s.logo ? h('img', { class: 'logo-prev', src: s.logo, alt: 'Logo' }) : h('div', { class: 'logo-prev' }), file, s.logo ? h('button', { class: 'btn ghost sm', onclick: () => { s.logo = null; save(); render(); } }, 'Quitar') : null)));
+    const wn = h('input', { type: 'text', maxlength: 40, value: s.workspace, onchange: () => { s.workspace = wn.value.trim() || 'Equipo'; save(); } });
+    root.append(sect('Nombre del equipo', null, true, wn));
+    const ch = (key, label, desc) => { const c = h('input', { type: 'checkbox', checked: s[key], onchange: () => { s[key] = c.checked; if (key === 'defBillable') draft.billable = c.checked; save(); } }); return sect(label, desc, true, h('label', { class: 'days' }, h('label', {}, c, 'Activado'))); };
+    root.append(ch('requireProject', 'Proyecto obligatorio', 'Si está activado, hay que elegir un proyecto para iniciar el cronómetro o guardar una entrada.'));
+    root.append(ch('defBillable', 'Entradas facturables por defecto', 'Se aplica a entradas y proyectos nuevos cuando el proyecto no indica lo contrario.'));
+    const df = h('select', { value: s.durFmt, onchange: () => { s.durFmt = df.value; save(); } }, [['full', 'Completo (hh:mm:ss)'], ['compact', 'Compacto (h:mm)'], ['decimal', 'Decimal (h,hh)']].map(([v, l]) => h('option', { value: v }, l))); df.value = s.durFmt;
+    root.append(sect('Formato de duración', 'Cómo se muestran las duraciones en listas, gráficos e informes. El cronómetro siempre muestra hh:mm:ss.', true, df));
+    const days = h('div', { class: 'days' }, [1, 2, 3, 4, 5, 6, 0].map(d => { const c = h('input', { type: 'checkbox', checked: s.workDays.includes(d), onchange: () => { s.workDays = [0, 1, 2, 3, 4, 5, 6].filter(x => (x === d ? c.checked : s.workDays.includes(x))); save(); } }); return h('label', {}, c, DAYN[d]); }));
+    root.append(sect('Días laborables', 'Los días no laborables se sombrean en el calendario.', true, days));
+    const ws = h('select', { value: String(s.weekStart), onchange: () => { s.weekStart = Number(ws.value); calStart = null; save(); } }, [['1', 'Lunes'], ['0', 'Domingo'], ['6', 'Sábado']].map(([v, l]) => h('option', { value: v }, l))); ws.value = String(s.weekStart);
+    root.append(sect('La semana empieza en', null, true, ws));
+    const imp = h('input', { type: 'file', accept: '.csv,text/csv', onchange: () => { const f = imp.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { imp.value = ''; importDialog(String(rd.result)); }; rd.readAsText(f); } });
+    root.append(sect('Importar desde Clockify', 'En Clockify ve a Reports › Detailed, elige las fechas, y Export › CSV (con el idioma en inglés). Selecciona ese archivo aquí: se importan entradas, proyectos, clientes y etiquetas. Las entradas quedan a tu nombre.', false, imp));
+    const pw = h('input', { type: 'password', placeholder: 'Nueva contraseña (mín. 8)', autocomplete: 'new-password' });
+    root.append(sect('Mi contraseña', null, false, h('div', { class: 'addrow' }, pw, h('button', { class: 'btn sm', onclick: async () => {
+      if (pw.value.length < 8) return toast('Mínimo 8 caracteres');
+      const { error } = await sb.auth.updateUser({ password: pw.value });
+      if (error) return toast(authFail(error));
+      pw.value = ''; toast('Contraseña cambiada');
+    } }, 'Cambiar'))));
+    if (adm) root.append(sect('Zona peligrosa', 'Borra TODAS las horas del equipo, proyectos, clientes y etiquetas. No se puede deshacer.', false,
+      h('button', { class: 'btn danger sm', onclick: () => {
+        const t = h('input', { type: 'text', placeholder: 'Escribe BORRAR para confirmar' });
+        modal({ title: 'Borrar todos los datos', body: h('div', { class: 'form' }, h('p', { style: 'margin:0;color:var(--muted)' }, 'Se borrarán las horas de todas las personas. Esto no se puede deshacer.'), t),
+          buttons: [{ label: 'Cancelar', kind: 'ghost', onClick: c => c() }, { label: 'Borrar todo', kind: 'danger', onClick: (c, err) => {
+            if (t.value.trim() !== 'BORRAR') return err('Escribe BORRAR para confirmar.');
+            state.tasks = []; state.projects = []; state.clients = []; state.tags = []; state.running = null;
+            draft = { projectId: '', tagIds: [], billable: S().defBillable }; persist(); c(); render(); toast('Datos borrados');
+          } }] });
+      } }, 'Borrar todos los datos')));
+    if (!adm) root.querySelectorAll('.sect.lock').forEach(el => el.querySelectorAll('input,select,button').forEach(x => { x.disabled = true; }));
+    return root;
+  }
+
+
+  /* ---------- Importar desde Clockify (CSV del informe Detailed) ---------- */
+  function parseCsv(txt) {
+    if (txt.charCodeAt(0) === 0xFEFF) txt = txt.slice(1);
+    const first = txt.split(/\r?\n/)[0] || '';
+    const delim = [',', ';', '\t'].map(d => [d, first.split(d).length]).sort((a, b) => b[1] - a[1])[0][0];
+    const rows = []; let row = [], f = '', q = false;
+    for (let i = 0; i < txt.length; i++) {
+      const c = txt[i];
+      if (q) { if (c === '"') { if (txt[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+      else if (c === '"') q = true;
+      else if (c === delim) { row.push(f); f = ''; }
+      else if (c === '\n') { row.push(f); rows.push(row); row = []; f = ''; }
+      else if (c !== '\r') f += c;
+    }
+    if (f !== '' || row.length) { row.push(f); rows.push(row); }
+    return rows;
+  }
+  function parseDT(d, t, fmt) {
+    const dp = String(d || '').trim().split(/[\/\-.]/).map(x => parseInt(x, 10));
+    const tm = String(t || '').trim().match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AaPp][Mm])?/);
+    if (dp.length < 3 || dp.some(isNaN) || !tm) return NaN;
+    let [a, b, c] = dp, y, m, day;
+    if (fmt === 'ymd') [y, m, day] = [a, b, c]; else if (fmt === 'mdy') [m, day, y] = [a, b, c]; else [day, m, y] = [a, b, c];
+    if (y < 100) y += 2000;
+    let hh = +tm[1]; const ap = (tm[4] || '').toLowerCase();
+    if (ap === 'pm' && hh < 12) hh += 12; if (ap === 'am' && hh === 12) hh = 0;
+    const ts = new Date(y, m - 1, day, hh, +tm[2], +(tm[3] || 0)).getTime();
+    return isFinite(ts) && m >= 1 && m <= 12 ? ts : NaN;
+  }
+  function detectFmt(vals) {
+    let dmy = false, mdy = false;
+    for (const v of vals) {
+      const p = String(v).trim().split(/[\/\-.]/);
+      if (p[0] && p[0].length === 4) return 'ymd';
+      if (+p[0] > 12) dmy = true; if (+p[1] > 12) mdy = true;
+    }
+    return dmy && !mdy ? 'dmy' : mdy && !dmy ? 'mdy' : null;
+  }
+  function importDialog(text) {
+    const table = parseCsv(text);
+    const head = (table[0] || []).map(x => x.trim().toLowerCase());
+    const miss = ['start date', 'start time', 'end date', 'end time'].filter(n => !head.includes(n));
+    if (table.length < 2 || miss.length) return toast(table.length < 2 ? 'Ese archivo está vacío' : 'No es un informe Detailed de Clockify en inglés (faltan: ' + miss.join(', ') + ')');
+    const g = (r, n) => { const i = head.indexOf(n); return i < 0 ? '' : (r[i] || '').trim(); };
+    const recs = table.slice(1).filter(r => r.some(x => x.trim())).map(r => ({
+      project: g(r, 'project'), client: g(r, 'client'), text: g(r, 'description'), user: g(r, 'user'), email: g(r, 'email'),
+      tags: g(r, 'tags').split(',').map(x => x.trim()).filter(Boolean), billable: /^(yes|true|1|si|sí)$/i.test(g(r, 'billable')),
+      sd: g(r, 'start date'), st: g(r, 'start time'), ed: g(r, 'end date'), et: g(r, 'end time')
+    }));
+    const det = detectFmt(recs.map(r => r.sd));
+    const users = [...new Set(recs.map(r => r.user).filter(Boolean))];
+    const fmtSel = h('select', { value: det || 'dmy' }, [['dmy', 'DD/MM/AAAA'], ['mdy', 'MM/DD/AAAA'], ['ymd', 'AAAA-MM-DD']].map(([v, l]) => h('option', { value: v }, l)));
+    fmtSel.value = det || 'dmy';
+    const tagUsers = h('input', { type: 'checkbox', checked: users.length > 1 });
+    const sum = h('div', { class: 'hint', style: 'color:var(--ink);line-height:1.6' });
+    const build = () => {
+      const fmt = fmtSel.value, out = [], bad = [];
+      recs.forEach(r => { const a = parseDT(r.sd, r.st, fmt), b = parseDT(r.ed, r.et, fmt); (isFinite(a) && isFinite(b) && b > a ? out : bad).push(Object.assign({}, r, { a, b })); });
+      const key = (t, pn) => `${t.start}|${t.end}|${t.text}|${pn}`;
+      const have = new Set(myTasks().map(t => key(t, pName(t.projectId) === 'Sin proyecto' ? '' : pName(t.projectId))));
+      const fresh = out.filter(r => !have.has(key({ start: r.a, end: r.b, text: r.text || 'Tarea' }, r.project)));
+      return { out, bad, fresh };
+    };
+    const refresh = () => {
+      const { out, bad, fresh } = build();
+      const ts = out.map(r => r.a);
+      sum.textContent = '';
+      sum.append(h('div', {}, h('b', {}, out.length), ' entradas válidas' + (bad.length ? ` (${bad.length} omitidas: fechas ilegibles)` : '')));
+      if (out.length) sum.append(h('div', {}, 'Del ', h('b', {}, fmtDate(Math.min(...ts)) + ' ' + new Date(Math.min(...ts)).getFullYear()), ' al ', h('b', {}, fmtDate(Math.max(...ts)) + ' ' + new Date(Math.max(...ts)).getFullYear())));
+      sum.append(h('div', {}, [...new Set(out.map(r => r.project).filter(Boolean))].length + ' proyectos · ' + [...new Set(out.map(r => r.client).filter(Boolean))].length + ' clientes · ' + users.length + ' personas'));
+      if (out.length - fresh.length) sum.append(h('div', {}, (out.length - fresh.length) + ' ya estaban importadas: se omitirán.'));
+      if (!det) sum.append(h('div', { style: 'color:#6b5a1e' }, 'No se pudo detectar el formato de fecha: revisa el selector de arriba.'));
+    };
+    fmtSel.addEventListener('change', refresh); refresh();
+    const body = h('div', { class: 'form' },
+      h('label', { class: 'fl' }, h('span', {}, 'Formato de fecha de tu archivo'), fmtSel),
+      users.length > 1 ? h('label', { class: 'fl inline' }, h('span', {}, 'Añadir a cada entrada una etiqueta con el nombre de la persona (las entradas quedan a tu nombre)'), tagUsers) : null,
+      sum);
+    modal({ title: 'Importar desde Clockify', body, buttons: [
+      { label: 'Cancelar', kind: 'ghost', onClick: c => c() },
+      { label: 'Importar', onClick: (c, err) => {
+        const { fresh } = build(); if (!fresh.length) return err('No hay nada nuevo que importar.');
+        const cl = n => { if (!n) return ''; let o = state.clients.find(x => x.name.toLowerCase() === n.toLowerCase()); if (!o) state.clients.push(o = { id: uid(), name: n, address: '', archived: false }); return o.id; };
+        const pr = (n, clientName, bill) => { if (!n) return ''; let o = state.projects.find(x => x.name.toLowerCase() === n.toLowerCase()); if (!o) state.projects.push(o = { id: uid(), name: n, clientId: cl(clientName), color: PALETTE[state.projects.length % PALETTE.length], billable: bill, archived: false }); return o.id; };
+        const tg = n => { let o = state.tags.find(x => x.name.toLowerCase() === n.toLowerCase()); if (!o) state.tags.push(o = { id: uid(), name: n, archived: false }); return o.id; };
+        fresh.forEach(r => {
+          const tags = r.tags.map(tg); if (tagUsers.checked && r.user) tags.push(tg('👤 ' + r.user));
+          state.tasks.push({ id: uid(), userId: me.id, text: r.text || 'Tarea', status: false, start: r.a, end: r.b, projectId: pr(r.project, r.client, r.billable), tagIds: [...new Set(tags)], billable: r.billable });
+        });
+        persist(); c(); location.hash = 'tracker'; render(); toast(fresh.length + ' entradas importadas');
+      } }] });
+  }
+
+  const VIEWS = { tracker: trackerView, calendar: calendarView, dashboard: dashboardView, reports: reportsView, projects: projectsView, team: teamView, clients: clientsView, tags: tagsView, workspace: settingsView };
+
+  /* =====================  routing  ===================== */
+  function go() {
+    if (!me) return;
+    const hash = location.hash.slice(1);
+    route = VIEWS[hash] ? hash : 'tracker';
+    hideTip(); window.scrollTo(0, 0);
+    render();
+  }
+  $('#brand').addEventListener('click', () => { if (me) location.hash = 'tracker'; });
+  $('#logout').addEventListener('click', logout);
+  window.addEventListener('hashchange', go);
+  boot();
+})();
+</script>
+</body>
+</html>
