@@ -1,8 +1,6 @@
-// Rellena estos dos valores con los de tu proyecto de Supabase:
-//   Supabase > Project Settings > API > "Project URL" y "anon public" key.
-// La clave "anon" es pública por diseño: la seguridad la dan las reglas (RLS) del esquema SQL.
-// NUNCA pegues aquí la clave "service_role".
+// Claves PÚBLICAS de Supabase (seguras de publicar: la seguridad la dan las reglas RLS del esquema SQL).
+// NUNCA pegues aquí la clave "secret" ni "service_role".
 window.APP_CONFIG = {
-  SUPABASE_URL: '',
-  SUPABASE_ANON_KEY: ''
+  SUPABASE_URL: 'https://lxwncufnojrdrateznsk.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_KSAHnhu7-DdRHNS2XCvY4g_pDYLX8Ux'
 };
